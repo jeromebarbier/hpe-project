@@ -1,0 +1,17 @@
+heat_template_version: 2015-10-15
+
+description: Simple template to deploy the B service
+
+resources:
+  b_instance:
+    type: OS::Nova::Server
+    properties:
+      image: fedora24
+      flavor: m1.small
+    description: This instance describes how to deploy the b service
+
+outputs:
+  b_instance_ip:
+    description: The IP address of the deployed instances
+    value: { get_attr: [b_instance, first_address] }
+
