@@ -8,6 +8,7 @@ resources:
     properties:
       image: fedora24
       flavor: m1.small
+      user-data: ./general_initialization_fedora.sh
     description: This instance describes how to deploy the b service
 
 outputs:
