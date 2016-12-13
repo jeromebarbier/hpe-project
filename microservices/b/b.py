@@ -29,10 +29,10 @@ app.debug = True
 config.logger = app.logger
 
 # Global information for auth
-config.tenant = "groupe6"
+config.tenant = "project6"
 config.user   = "groupe6"
 config.password = ""
-config.authurl  = "https://10.11.50.26/auth"
+config.authurl  = "https://10.11.50.26:5000/v2.0"
 
 # SWIFT containers
 config.container_pictures = "gifts"
@@ -133,8 +133,8 @@ def shutdown():
 
 @app.route("/testswift")
 def swift():
-    swift_conn = swiftclient.client.Connection(authurl=config.authurl, user=config.user, key=config.password, tenant_name=config.tenant, auth_version='2.0', os_options={})
-    for container in conn.get_account()[1]:
+    swift_conn = swiftclient.Connection(authurl=config.authurl, tenant_name=config.tenant, user=config.user, insecure=True)
+    for container in swift_conn.get_account()[1]:
         print(container['name'])
     swift_conn.close()
 
