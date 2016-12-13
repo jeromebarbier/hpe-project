@@ -19,6 +19,7 @@ from flask import request
 import config
 
 import requests
+import swiftclient
 
 # Initialise Flask
 app = Flask(__name__)
@@ -26,6 +27,16 @@ app.debug = True
 
 # Affect app logger to a global variable so logger can be used elsewhere.
 config.logger = app.logger
+
+# Global information for auth
+config.tenant = "groupe6"
+config.user   = "groupe6"
+config.password = ""
+config.authurl  = "https://10.11.50.26/auth"
+
+# SWIFT containers
+config.container_pictures = "gifts"
+config.container_pictures_names = "gifts-names"
 
 
 @app.route("/button/<uid>")
@@ -93,6 +104,7 @@ def click(uid):
     # If W had not answered as expected
     if w_answer.status_code != 200:
         # Then W is not able to give a gift
+        config.logger.error("W service did not answer as exepected")
         resp = jsonify({"ok" : false, "error": "W service did not answer as expected", "wstatuscode": w_answer.status_code});
         resp.status_code = 200
         add_headers(resp)
@@ -100,6 +112,11 @@ def click(uid):
 
     # W gave an answer!
     # Process save on Swift
+    swift_conn = swiftclient.client.Connection(authurl=config.authurl, user=config.user, key=config.password, tenant_name=config.tenant, auth_version='2.0', os_options={})
+    swift_conn.put_object(config.container_pictures, uid, w_answer.img)
+    swift_conn.put_object(config.container_pictures_names, uid, w_answer.price)
+    swift_conn.close()
+
     # Finally say that all is good!
     resp = jsonify({"ok" : true});
     resp.status_code = 200
@@ -112,6 +129,14 @@ def shutdown():
     shutdown_server()
     config.logger.info("Stopping %s...", config.b.NAME)
     return "Server shutting down..."
+
+
+@app.route("/testswift")
+def swift():
+    swift_conn = swiftclient.client.Connection(authurl=config.authurl, user=config.user, key=config.password, tenant_name=config.tenant, auth_version='2.0', os_options={})
+    for container in conn.get_account()[1]:
+        print(container['name'])
+    swift_conn.close()
 
 
 @app.route("/", methods=["GET"])
