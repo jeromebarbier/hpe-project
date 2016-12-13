@@ -1,0 +1,27 @@
+<html>
+    <head>
+        <title>Microservice B - Demonstration</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    
+        <script type="text/javascript">
+        jQuery(function() {
+            jQuery.getJSON("http://localhost:8090/button/demo", {}, function(r) {
+
+                jQuery("body").html(r.html); // Display the button
+                eval(r.js);                  // Load the button's API
+
+                // Use the API
+                jQuery("#elButton").disable();
+                jQuery("#elButton").enable();
+
+            }).fail(function() {
+                jQuery("body").html("<p>Failed to call the microservice<p>");
+            });
+        });
+        </script>
+    
+    </head>
+    <body>
+        
+    </body>
+</html>
