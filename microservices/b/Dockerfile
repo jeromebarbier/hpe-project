@@ -1,9 +1,11 @@
-FROM fedora
+FROM ubuntu:16.04
+ENV DEBIAN_FRONTEND noninteractive
 
-RUN dnf clean all
-RUN dnf update && dnf clean all
-RUN dnf install -y python3 python3-flask python3-keystoneclient && dnf clean all
-RUN rpm -i python3-swiftclient.rpm
+RUN apt-get -y update
+RUN apt-get -y install python3\
+                         python3-flask\
+                         python3-keystoneclient
+RUN apt-get -y install python3-swiftclient
 RUN useradd b
 COPY config.py b.conf b.py /home/b/
 RUN chown -R b:b /home/b/
