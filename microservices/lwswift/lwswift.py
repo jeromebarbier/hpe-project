@@ -2,14 +2,18 @@ import requests
 import swiftclient
 
 class lwswift:
+    """
+    This class provides a very high-level access to SWIFT's objects containers
+    """
     # Default containers
-    container_pictures = "gifts"
-    container_pictures_name = "gift-names"
+    container_pictures              = "gifts"
+    container_pictures_name         = "gift-names"
+    container_services_directory    = "services-directory"
     
     # A bit of configuration
-    authurl = "http://10.11.50.26:5000/v2.0"
-    tenant  = "groupe6"
-    user    = "groupe6"
+    authurl  = "http://10.11.50.26:5000/v2.0"
+    tenant   = "groupe6"
+    user     = "groupe6"
     password = ""
     
     def __init__(self):
@@ -27,6 +31,11 @@ class lwswift:
         """
         self.close()
     
+    
+    #########################
+    # Connection management #
+    #########################
+    
     def connect(self):
         """
         Creates a new connection to the SWIFT Object manager
@@ -36,7 +45,7 @@ class lwswift:
             self.connection = swiftclient.client.Connection(authurl=lwswift.authurl, tenant_name=lwswift.tenant, user=lwswift.user, auth_version='2.0', key=lwswift.password, insecure=True)
         
         else:
-            raise Exception("lwswift: Cannot connect: a connection is already initialized for this instance")
+            raise Exception("lwswift.connect: Cannot connect: a connection is already initialized for this instance")
     
     def close(self):
         """
@@ -53,6 +62,41 @@ class lwswift:
         if self.connection is None:
             self.connect()
     
+    
+    ######################
+    # Objects management #
+    ######################
+    
+    def put_object(self, container, name, value):
+        """
+        Puts an object in the given container
+        :param container: The SWIFT container's name
+        :param name: The object's name (the key to retrieve it)
+        :param value: The object's content
+        """
+        self.check_connection() # Ensure there is an active connection
+        self.connection.put_object(container, name, value)
+        
+    def get_object(self, container, name):
+        """
+        Retrieve an object in the given container
+        :param container: The SWIFT container's name
+        :param name: The object's name (the SWIFT's key)
+        :return: The object's value or None if the Object is not readable
+        """
+        self.check_connection() # Ensure we get a connection
+        obj = None
+        try:
+            r, obj = self.connection.get_object(container, name)
+        except Exception:
+            pass # Do nothing and just return None
+        return obj
+    
+    
+    #########################
+    # High-level procedures #
+    #########################
+    
     def send_picture(self, user_id, picture_name, picture_bytes):
        """
        Sends a picture to SWIFT manager
@@ -60,9 +104,29 @@ class lwswift:
        :param picture_name: The picture's name
        :picture_bytes: The picture's bytes
        """
-       
-       self.check_connection() # Ensure there is an active connection
-       
-       self.connection.put_object(lwswift.container_pictures_name, user_id, picture_name)
-       self.connection.put_object(lwswift.container_pictures, user_id, picture_bytes)
+       self.put_object(lwswift.container_pictures_name, user_id, picture_name)
+       self.put_object(lwswift.container_pictures, user_id, picture_bytes)
     
+    def get_service(self, name):
+        """
+        Try to retrieve a micro-service's IP address using SWIFT
+        :param name: The microservice's name (in ["b", "i", "p", "w", "s"])
+        :raise Exception: When the requested Microservice name is not valid
+        :return: The requested IP address or None if there is no such service registered
+        """
+        if name in ["b", "i", "p", "w", "s"]:
+            return self.get_object(lwswift.container_services_directory, name)
+        else:
+            raise Exception("lwsift.get_service: Micro-service " + name + " is not a valid service")
+    
+    def register_service(self, name, ip):
+        """
+        Registers a new microservice's IP address into the directory
+        :param name: The microservice's name (in ["b", "i", "p", "w", "s"])
+        :param ip: The microservice's IP address
+        :raise Exception: When the requested Microservice name is not valid
+        """
+        if name in ["b", "i", "p", "w", "s"]:
+            self.put_object(lwswift.container_services_directory, name, ip)
+        else:
+            raise Exception("lwsift.get_service: Micro-service " + name + " is not a valid service")
