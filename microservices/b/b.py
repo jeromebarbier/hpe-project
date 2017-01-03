@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-"""Service B define the price won by a customer"""
+"""Service B gives the button to the customer and lets it play with W"""
 
 import base64
 import logging
@@ -19,7 +19,11 @@ from flask import request
 import config
 
 import requests
-import swiftclient
+
+# Import SWIFT lib
+import sys
+sys.path.append('..') # Your path should contain the path to the folder "microservices"
+import lwswift
 
 # Initialise Flask
 app = Flask(__name__)
@@ -27,17 +31,6 @@ app.debug = True
 
 # Affect app logger to a global variable so logger can be used elsewhere.
 config.logger = app.logger
-
-# Global information for auth
-config.tenant = "project6"
-config.user   = "groupe6"
-config.password = ""
-config.authurl  = "https://10.11.50.26:5000/v2.0"
-
-# SWIFT containers
-config.container_pictures = "gifts"
-config.container_pictures_names = "gifts-names"
-
 
 @app.route("/button/<uid>")
 def button(uid):
@@ -95,30 +88,37 @@ def button(uid):
 @app.route("/click/<uid>")
 def click(uid):
     config.logger.info("A user asks to play...")
-
+    lwsc = lwswift() # We will have to contact SWIFT
+    
     # Well, ask W to define a gift for the user
-    W_Server_Ip = "" # Well, we will have to think about that!
-
-    w_answer = requests.get(W_Server_Ip + ":8090/play/" + uid)
-
+    # Retrieve W service's IP address
+    w_ip = lwsc.get_service("w")
+    
+    if w_ip is None:
+        # Then there is no registered W service
+        config.logger.error("No W service registered")
+        resp = jsonify({"ok" : False, "error": "Cannot get a W service"});
+        resp.status_code = 200
+        add_headers(resp)
+        return resp
+    
+    w_answer = requests.get("http://" + w_ip + ":8090/play/" + uid)
+    
     # If W had not answered as expected
     if w_answer.status_code != 200:
         # Then W is not able to give a gift
         config.logger.error("W service did not answer as exepected")
-        resp = jsonify({"ok" : false, "error": "W service did not answer as expected", "wstatuscode": w_answer.status_code});
+        resp = jsonify({"ok" : False, "error": "W service did not answer as expected", "wstatuscode": w_answer.status_code});
         resp.status_code = 200
         add_headers(resp)
         return resp
-
+    
     # W gave an answer!
     # Process save on Swift
-    swift_conn = swiftclient.client.Connection(authurl=config.authurl, user=config.user, key=config.password, tenant_name=config.tenant, auth_version='2.0', os_options={})
-    swift_conn.put_object(config.container_pictures, uid, w_answer.img)
-    swift_conn.put_object(config.container_pictures_names, uid, w_answer.price)
-    swift_conn.close()
-
+    lwsc.send_picture(uid, w_answer.price, w_answer.img)
+    
     # Finally say that all is good!
-    resp = jsonify({"ok" : true});
+    resp = jsonify({"ok" : True});
     resp.status_code = 200
     add_headers(resp)
     return resp
@@ -129,15 +129,6 @@ def shutdown():
     shutdown_server()
     config.logger.info("Stopping %s...", config.b.NAME)
     return "Server shutting down..."
-
-
-@app.route("/testswift")
-def swift():
-    swift_conn = swiftclient.Connection(authurl=config.authurl, tenant_name=config.tenant, user=config.user, insecure=True)
-    for container in swift_conn.get_account()[1]:
-        print(container['name'])
-    swift_conn.close()
-
 
 @app.route("/", methods=["GET"])
 def api_root():
