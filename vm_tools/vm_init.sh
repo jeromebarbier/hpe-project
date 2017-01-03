@@ -28,12 +28,7 @@ else
 	echo "Get code from GIT repository" >> $LOG
 	git clone https://github.com/jeromebarbier/hpe-project.git . >> $LOG
 
-	# Initialize IP notifier
-	echo "Initialize IP notifier" >> $LOG
-	chmod +x ./vm_tools/init_ip_notifier.sh >> $LOG
-
 	DATE=$(date)
-
 	echo "$DATE: Deployment finished with success"
 fi
 
