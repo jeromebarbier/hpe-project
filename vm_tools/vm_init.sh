@@ -1,21 +1,21 @@
 #!/usr/bin/bash
-LOG="vm_init.log"
-FOLDER="~/hpe_project"
+LOG=~/vm_init.log
+FOLDER="hpe_project"
 
 DATE=$(date)
 
 echo "$DATE: New execution started" >> $LOG
 
 # If already setup, then don't re-execute
-if [ -d "$FOLDER" ]; then
+if [ -d $FOLDER ]; then
 	echo "Already setup, nothing to deploy" >> $LOG
 else
 	# Create working folder
 	echo "Create $FOLDER" >> $LOG
-	mkdir "$FOLDER" >> $LOG
+	mkdir $FOLDER >> $LOG
 
 	echo "Go to folder..." >> $LOG
-	cd "$FOLDER" >> $LOG
+	cd $FOLDER >> $LOG
 
 	if [ $? != 0 ]; then
 		echo " ... Error, stop setup here" >> $LOG
