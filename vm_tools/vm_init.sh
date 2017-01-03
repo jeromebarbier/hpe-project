@@ -45,7 +45,7 @@ chmod +x build_container.sh >> $LOG
 echo "Run container building..." >> $LOG
 ./build_container.sh "$MICSERV" >> $LOG
 
-if [ $? -neq 0 ]; then
+if [ $? != 0 ]; then
     echo " ... Failed to build container"
     exit 2
 fi
