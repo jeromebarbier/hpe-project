@@ -32,48 +32,20 @@ app.debug = True
 # Affect app logger to a global variable so logger can be used elsewhere.
 config.logger = app.logger
 
-@app.route("/button/<uid>")
-def button(uid):
-    config.logger.info("Creating button...")
-
-    data = {
-        # The button element
-        "html": "<button id=\"elButton\">Jouer !</button>",
-
-        # The associated JS API
-        "js": """
-        function play() {
-            jQuery.getJSON("/click/""" + uid + """", {}, function(r) {
-                disableButton();
-                if(r.ok != undefined) {
-                    if(r.ok) {
-                        if(jQuery("#elButton").played != undefined) {
-                            jQuery("#elButton").played();
-                        }
-                    } else {
-                        jQuery("#elButton").replaceWith(jQuery("<p>" + r.error + "</p>"));
-                    }
-                }
-            }).fail(function() {
-                jQuery("#elButton").replaceWith(jQuery("<p>Failed to get an answer from the microservice</p>"));
-            });
-        }
-        
-        jQuery("#elButton").on("click", play);
-        
-        jQuery("#elButton").init.prototype.disable = function() {
-            jQuery("#elButton").attr("disabled", true);
-        }
-
-        jQuery("#elButton").init.prototype.enable = function() {
-            jQuery("#elButton").attr("disabled", false);
-        }
-
-        jQuery("#elButton").init.prototype.playedTrigger = function(f) {
-            jQuery("#elButton").init.prototype.played = f;
-        }
-
-        """
+@app.route("/checkPlayed/<uid>")
+def click(uid):
+    config.logger.info("Checking if a player has played...")
+    lwsc = lwswift() # We will have to contact SWIFT
+    
+    # Process save on Swift
+    price = lwsc.get_object(lwswift.container_pictures_name, uid)
+    if price is None:
+        data = {
+        "html": "<p>User" + uid + "has not played yet."
+    }
+    else:
+        data = {
+        "html": "<p>User" + uid + "has already played."
     }
 
     resp = jsonify(data);
@@ -85,38 +57,25 @@ def button(uid):
     add_headers(resp)
     return resp
 
-@app.route("/click/<uid>")
-def click(uid):
-    config.logger.info("A user asks to play...")
-    lwsc = lwswift() # We will have to contact SWIFT
-    
-    # Well, ask W to define a gift for the user
-    # Retrieve W service's IP address
-    w_ip = lwsc.get_service("w")
-    
-    if w_ip is None:
-        # Then there is no registered W service
-        config.logger.error("No W service registered")
-        resp = jsonify({"ok" : False, "error": "Cannot get a W service"});
-        resp.status_code = 200
-        add_headers(resp)
-        return resp
-    
-    w_answer = requests.get("http://" + w_ip + ":8090/play/" + uid)
-    
-    # If W had not answered as expected
-    if w_answer.status_code != 200:
-        # Then W is not able to give a gift
-        config.logger.error("W service did not answer as exepected")
-        resp = jsonify({"ok" : False, "error": "W service did not answer as expected", "wstatuscode": w_answer.status_code});
-        resp.status_code = 200
-        add_headers(resp)
-        return resp
-    
-    # W gave an answer!
-    # Process save on Swift
-    lwsc.send_picture(uid, w_answer.price, w_answer.img)
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     # Finally say that all is good!
     resp = jsonify({"ok" : True});
     resp.status_code = 200
