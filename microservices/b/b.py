@@ -22,8 +22,10 @@ import requests
 
 # Import SWIFT lib
 import sys
-sys.path.append('..') # Your path should contain the path to the folder "microservices"
-import lwswift
+
+# Require:
+# ln -s ../lwswift lwswift
+from lwswift.lwswift import lwswift
 
 # Initialise Flask
 app = Flask(__name__)
