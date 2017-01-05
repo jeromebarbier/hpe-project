@@ -68,7 +68,7 @@ if [ -z "$YES" ]; then
 	echo "[  ??  ] Is it what you need?"
 	printf "       "
 	read YESNO
-	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -z "$YESNO" ]; then
+	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -n "$YESNO" ]; then
 		echo "[  NO  ] Restart the script ;)"
 		exit 0
 	fi
@@ -76,5 +76,5 @@ fi
 
 # Creating the instance
 echo "[DOING ] Booting the VM"
-nova boot --flavor m1.small --image "$UBUNTU" --security-group default --key-name "$SERVICE-service" "$SERVICE-service"
+openstack server create --flavor m1.small --image "$UBUNTU" --security-group default "$SERVICE-service"
 echo "[ DONE ] Booting the VM"
