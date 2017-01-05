@@ -7,7 +7,7 @@
 # Check parameter
 if [ $# -lt 1 ] || [ "$1" == "help" ]; then
 	echo "Usage: $0 <SERVICE NAME> [<PICTURE NAME> [<YES>]]"
-	echo "       If <PICTURE NAME is defined, YES parameter disable all user-prompts"
+	echo "       If <PICTURE NAME> is defined, <YES> parameter disable all user-prompts"
 	exit 0
 fi
 
@@ -41,20 +41,21 @@ if [ -z "$UBUNTU" ]; then
 fi
 
 if [ -z "$UBUNTU" ]; then
-	echo "[  ??  ] Cannot auto-find the picture to deploy, wich one should be used?"
-	printf "       "
+	echo "[  ??  ] Cannot auto-find the picture to deploy, which one should be used?"
+	printf "       > "
 	read UBUNTU
 fi
 
 if [ -z "$YES" ]; then
 	# If the user asked to NOT validate picture name... then don't validate it
 	echo "[  ??  ] Picture $UBUNTU will be used, is this the good picture to use? [Y/n]"
+	printf "       > "
 	read YESNO
 	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -n "$YESNO" ]; then
 		echo "[ INFO ] Available pictures:"
 		openstack image list
 		echo "[  ??  ] Wish one do you want to use?"
-		printf "       "
+		printf "       > "
 		read UBUNTU
 	fi
 fi
@@ -65,8 +66,8 @@ echo "[ DONE ] Checking openstack platform"
 echo "[ INFO ] Configuration to be deployed:"
 echo "[ INFO ] Service=$SERVICE, image=$UBUNTU"
 if [ -z "$YES" ]; then
-	echo "[  ??  ] Is it what you need?"
-	printf "       "
+	echo "[  ??  ] Is it what you need? [Y/n]"
+	printf "       > "
 	read YESNO
 	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -n "$YESNO" ]; then
 		echo "[  NO  ] Restart the script ;)"
