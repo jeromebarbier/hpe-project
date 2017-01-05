@@ -58,43 +58,19 @@ def click(uid):
     return resp
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # Finally say that all is good!
-    resp = jsonify({"ok" : True});
-    resp.status_code = 200
-    add_headers(resp)
-    return resp
-
 @app.route("/shutdown", methods=["POST"])
 def shutdown():
     """Shutdown server"""
     shutdown_server()
-    config.logger.info("Stopping %s...", config.b.NAME)
+    config.logger.info("Stopping %s...", config.s.NAME)
     return "Server shutting down..."
 
 @app.route("/", methods=["GET"])
 def api_root():
     """Root url, provide service name and version"""
     data = {
-        "Service": config.b.NAME,
-        "Version": config.b.VERSION
+        "Service": config.s.NAME,
+        "Version": config.s.VERSION
     }
 
     resp = jsonify(data)
@@ -121,7 +97,7 @@ def configure_logger(logger, logfile):
     file_handler = RotatingFileHandler(logfile, "a", 1000000, 1)
 
     # Add logger to file
-    if (config.b.conf_file.get_b_debug().title() == 'True'):
+    if (config.s.conf_file.get_s_debug().title() == 'True'):
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
@@ -137,7 +113,7 @@ def add_headers(response):
 
 if __name__ == "__main__":
     # Vars
-    app_logfile = "b.log"
+    app_logfile = "s.log"
 
     # Change diretory to script one
     try:
@@ -149,10 +125,10 @@ if __name__ == "__main__":
     pp = pprint.PrettyPrinter(indent=4)
 
     # Initialise apps
-    config.initialise_b()
+    config.initialise_s()
 
     # Configure Flask logger
     configure_logger(app.logger, app_logfile)
 
-    config.logger.info("Starting %s", config.b.NAME)
-    app.run(port=int(config.b.conf_file.get_b_port()), host='0.0.0.0')
+    config.logger.info("Starting %s", config.s.NAME)
+    app.run(port=int(config.s.conf_file.get_s_port()), host='0.0.0.0')
