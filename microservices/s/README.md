@@ -1,6 +1,6 @@
 # Service s
 
-Button widget allowing the customer to play
+Checking if a player has already played
 
 ## Dependencies
 
@@ -33,8 +33,10 @@ Return service name and version
 
 ```json
 {
+
     "Service": "Microservice s",
     "Version": "0.1"
+
 }
 ```
 
@@ -52,6 +54,6 @@ GET /checkPlayed?uid=<UID_ID>
 ## Response
 ```json
 {
-    "html": player's status verification
+    "html": Button's HTML code
 }
 

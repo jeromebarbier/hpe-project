@@ -19,7 +19,7 @@ class S(object):
         self.VERSION = "0.1"
         #
         # Configuration file
-        self.conf_file = bConfiguration("s.conf")
+        self.conf_file = sConfiguration("s.conf")
 
 
 class sConfiguration(object):
