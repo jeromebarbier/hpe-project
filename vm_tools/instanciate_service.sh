@@ -6,11 +6,18 @@
 
 # Check parameter
 if [ $# -lt 1 ] || [ "$1" == "help" ]; then
-	echo "Usage: $0 <SERVICE NAME>"
+	echo "Usage: $0 <SERVICE NAME> [<PICTURE NAME> [<YES>]]"
+	echo "       If <PICTURE NAME is defined, YES parameter disable all user-prompts"
 	exit 0
 fi
 
+SERVICE="$1" # Micro-service name
+UBUNTU="$2"
+YES="$3"
+
 # Check pre-requisites
+echo "[DOING ] Checking openstack platform"
+
 ## Openstack command is ready to use
 openstack help > /dev/null 2> /dev/null
 if [ $? != 0 ]; then
@@ -28,19 +35,45 @@ else
 fi
 
 ## The system picture
-UBUNTU=$(openstack image list | grep ubuntu | cut -d' ' -f 4 | head -n 1)
+if [ -z "$UBUNTU" ]; then
+	# Don't overwrite user choice
+	UBUNTU=$(openstack image list | grep ubuntu | cut -d' ' -f 4 | head -n 1) # Ubuntu image to use
+fi
+
 if [ -z "$UBUNTU" ]; then
 	echo "[  ??  ] Cannot auto-find the picture to deploy, wich one should be used?"
+	print "       "
 	read UBUNTU
 fi
 
-echo "[  ??  ] Picture $UBUNTU will be used, is this the good picture to use? [Y/n]"
-read YESNO
-if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ]; then
-	openstack image list
-	echo "[  ??  ] Wish one do you want to use?"
-	read UBUNTU
+if [ -z "$YES" ]; then
+	# If the user asked to NOT validate picture name... then don't validate it
+	echo "[  ??  ] Picture $UBUNTU will be used, is this the good picture to use? [Y/n]"
+	read YESNO
+	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -z "$YESNO" ]; then
+		echo "[ INFO ] Available pictures:"
+		openstack image list
+		echo "[  ??  ] Wish one do you want to use?"
+		print "       "
+		read UBUNTU
+	fi
 fi
 
 echo "[  OK  ] Picture $UBUNTU will be used"
+echo "[ DONE ] Checking openstack platform"
 
+echo "[ INFO ] Configuration to be deployed:"
+echo "[ INFO ] Service=$SERVICE, image=$UBUNTU"
+if [ -z "$YES" ]; then
+	echo "[  ??  ] Is it what you need?"
+	read YESNO
+	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -z "$YESNO" ]; then
+		echo "[  NO  ] Restart the script ;)"
+		exit 0
+	fi
+fi
+
+# Creating the instance
+echo "[DOING ] Booting the VM"
+nova boot --flavor m1.small --image "$UBUNTU" --security-group default --key-name "$SERVICE-service" "$SERVICE-service"
+echo "[ DONE ] Booting the VM"
