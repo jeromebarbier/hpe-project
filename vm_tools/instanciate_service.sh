@@ -42,7 +42,7 @@ fi
 
 if [ -z "$UBUNTU" ]; then
 	echo "[  ??  ] Cannot auto-find the picture to deploy, wich one should be used?"
-	print "       "
+	printf "       "
 	read UBUNTU
 fi
 
@@ -50,11 +50,11 @@ if [ -z "$YES" ]; then
 	# If the user asked to NOT validate picture name... then don't validate it
 	echo "[  ??  ] Picture $UBUNTU will be used, is this the good picture to use? [Y/n]"
 	read YESNO
-	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -z "$YESNO" ]; then
+	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -n "$YESNO" ]; then
 		echo "[ INFO ] Available pictures:"
 		openstack image list
 		echo "[  ??  ] Wish one do you want to use?"
-		print "       "
+		printf "       "
 		read UBUNTU
 	fi
 fi
@@ -66,6 +66,7 @@ echo "[ INFO ] Configuration to be deployed:"
 echo "[ INFO ] Service=$SERVICE, image=$UBUNTU"
 if [ -z "$YES" ]; then
 	echo "[  ??  ] Is it what you need?"
+	printf "       "
 	read YESNO
 	if [ "$YESNO" != "Y" ] && [ "$YESNO" != "y" ] && [ -z "$YESNO" ]; then
 		echo "[  NO  ] Restart the script ;)"
