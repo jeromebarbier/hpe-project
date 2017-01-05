@@ -9,6 +9,10 @@ echo "$DATE: New execution started" >> $LOG
 # If already setup, then don't re-execute
 if [ -d $FOLDER ]; then
 	echo "Already setup, nothing to deploy" >> $LOG
+	cd $FOLDER >> $LOG
+	
+	echo "Updating code base" >> $LOG
+	git pull >> $LOG
 else
 	# Create working folder
 	echo "Create $FOLDER" >> $LOG
