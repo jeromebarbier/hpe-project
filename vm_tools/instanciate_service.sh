@@ -6,14 +6,15 @@
 
 # Check parameter
 if [ $# -lt 1 ] || [ "$1" == "help" ]; then
-	echo "Usage: $0 <SERVICE NAME> [<PICTURE NAME> [<YES>]]"
-	echo "       If <PICTURE NAME> is defined, <YES> parameter disable all user-prompts"
+	echo "Usage: $0 <SERVICE NAME> [<PICTURE NAME> <NETWORK NAME> [<YES>]]"
+	echo "       If <PICTURE NAME> and <NETWORK NAME> are defined, <YES> parameter disable all user-prompts"
 	exit 0
 fi
 
 SERVICE="$1" # Micro-service name
 UBUNTU="$2"
-YES="$3"
+NETWORK="$3"
+YES="$4"
 
 # Check pre-requisites
 echo "[DOING ] Checking openstack platform"
@@ -60,11 +61,20 @@ if [ -z "$YES" ]; then
 	fi
 fi
 
+## The network
+if [ -z "$NETWORK" ]; then
+	echo "[ INFO ] Available networks:"
+	openstack network list
+	echo "[  ??  ] Which one do you want to use?"
+	printf "       > "
+	read NETWORK
+fi
+
 echo "[  OK  ] Picture $UBUNTU will be used"
 echo "[ DONE ] Checking openstack platform"
 
 echo "[ INFO ] Configuration to be deployed:"
-echo "[ INFO ] Service=$SERVICE, image=$UBUNTU"
+echo "[ INFO ] Service=$SERVICE, image=$UBUNTU, network=$NETWORK"
 if [ -z "$YES" ]; then
 	echo "[  ??  ] Is it what you need? [Y/n]"
 	printf "       > "
@@ -77,5 +87,5 @@ fi
 
 # Creating the instance
 echo "[DOING ] Booting the VM"
-openstack server create --flavor m1.small --image "$UBUNTU" --security-group default "$SERVICE-service"
+openstack server create --flavor m1.small --image "$UBUNTU" --nic net-id="$NETWORK" --security-group default "$SERVICE-service"
 echo "[ DONE ] Booting the VM"
