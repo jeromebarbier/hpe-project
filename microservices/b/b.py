@@ -12,6 +12,7 @@ import os
 import random
 import time
 import subprocess
+import json
 import sys
 from flask import Flask
 from flask import jsonify
@@ -117,7 +118,9 @@ def click(uid):
     
     # W gave an answer!
     # Process save on Swift
-    lwsc.send_picture(uid, w_answer.price, w_answer.img)
+    w_answer = w_answer.json()
+    print(type(w_answer))
+    lwsc.send_picture(uid, w_answer['price'], w_answer['img'])
     
     # Finally say that all is good!
     resp = jsonify({"ok" : True});

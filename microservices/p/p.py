@@ -11,6 +11,7 @@ import pprint
 import os
 import random
 import time
+import json
 import subprocess
 import sys
 from flask import Flask
@@ -19,7 +20,7 @@ from flask import request
 import config
 import swiftclient
 sys.path.append('..')
-import lwswift
+from lwswift.lwswift import lwswift
 
 # Initialise Flask
 app = Flask(__name__)
@@ -36,22 +37,13 @@ def api_picture(id):
     # Get picture
     lwsc = lwswift()
     picture = lwsc.get_object("gifts", id)
-    # Read the image and encode it to base64
-    #with open(config.w.conf_file.get_w_tmpfile() + "/" +
-    #         id + "_" + price, mode='rb') as file:
-
-    file_content = picture.read()
-    img = base64.b64encode(file_content)
-
-    config.logger.debug("Img: %s", img)
-
-    # Add latency on the service to simulate a long process
-    #time.sleep(int(config.p.conf_file.get_p_tempo()))
-
-    data = {"img": img.decode("ascii")}
-    resp = jsonify(data)
-    resp.status_code = 200
-    config.logger.info("*** End processing picutre for id %s ***", id)
+    if picture == None:
+        resp = jsonify({})
+        resp.status_code = 201
+    else:
+        resp = json.dumps({'picture' : picture.decode('ascii')})
+        resp.status_code = 200
+    config.logger.info("*** End processing picture for id %s ***", id)
     add_headers(resp)
     return resp
 

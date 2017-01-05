@@ -7,14 +7,14 @@ class lwswift:
     """
     # Default containers
     container_pictures              = "gifts"
-    container_pictures_name         = "gift-names"
+    container_pictures_name         = "gifts-names"
     container_services_directory    = "services-directory"
     
     # A bit of configuration
     authurl  = "http://10.11.50.26:5000/v2.0"
-    tenant   = "groupe6"
+    tenant   = "project6"
     user     = "groupe6"
-    password = ""
+    password = "F4fSI0G2Q0Y="
     
     def __init__(self):
         """
@@ -88,8 +88,9 @@ class lwswift:
         obj = None
         try:
             r, obj = self.connection.get_object(container, name)
-        except Exception:
-            pass # Do nothing and just return None
+            obj = obj.decode('utf-8')
+        except Exception as e:
+            print(e)
         return obj
     
     
