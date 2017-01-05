@@ -4,4 +4,4 @@ services:
         build:
             context: .
         ports:
-            - "8090:8090"
+            - "8092:8092"

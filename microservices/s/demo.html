@@ -5,7 +5,7 @@
     
         <script type="text/javascript">
         jQuery(function() {
-            jQuery.getJSON("http://localhost:8090/checkPlayed/demo", {}, function(r) {
+            jQuery.getJSON("http://localhost:8092/checkPlayed/demo", {}, function(r) {
                 jQuery("body").html(r.html); // Display the plâyer's verification
             }).fail(function() {
                 jQuery("body").html("<p>Failed to call the microservice<p>");
