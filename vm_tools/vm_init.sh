@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-LOG=~/vm_init.log
+LOG=/home/ubuntu/vm_init.log
 FOLDER="hpe_project"
 
 DATE=$(date)
@@ -12,7 +12,7 @@ if [ -d $FOLDER ]; then
 	cd $FOLDER >> $LOG
 	
 	echo "Updating code base" >> $LOG
-	git pull >> $LOG
+	git pull 2>> $LOG >> $LOG
 else
 	# Create working folder
 	echo "Create $FOLDER" >> $LOG
@@ -26,19 +26,19 @@ else
 		exit 1
 	fi
 
-	echo " ... Current folder is $PWD"
+	echo " ... Current folder is $PWD" >> $LOG
 
 	# Get GIT repo
 	echo "Get code from GIT repository" >> $LOG
-	git clone https://github.com/jeromebarbier/hpe-project.git . >> $LOG
+	git clone https://github.com/jeromebarbier/hpe-project.git . 2>> $LOG >> $LOG
 
 	DATE=$(date)
-	echo "$DATE: Deployment finished with success"
+	echo "$DATE: Deployment finished with success" >> $LOG
 fi
 
 echo "Starting the microservice..." >> $LOG
 if [ -z "$MICSERV" ]; then
-    echo " ... No microservice to start, variable \$MICSERV not defined"
+    echo " ... No microservice to start, variable \$MICSERV not defined" >> $LOG
     exit 1
 fi
 
@@ -47,12 +47,12 @@ cd microservices
 chmod +x build_container.sh >> $LOG
 
 echo "Run container building..." >> $LOG
-./build_container.sh "$MICSERV" >> $LOG
+./build_container.sh "$MICSERV" 2>> $LOG >> $LOG
 
 if [ $? != 0 ]; then
-    echo " ... Failed to build container"
+    echo " ... Failed to build container" >> $LOG
     exit 2
 fi
 
 echo "Run the container..." >> $LOG
-sudo docker run -p 8090:8090 "$MICSERV-service" >> $LOG
+sudo docker run -p 8090:8090 "$MICSERV-service" 2>> $LOG >> $LOG
