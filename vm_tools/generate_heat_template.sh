@@ -74,7 +74,6 @@ ask_user "Private subnetwork name" "psnetwork" "$ASSUME_YES" "$SILENT" "PRIVATE_
 ask_user "Gateway" "10.0.2.254" "$ASSUME_YES" "$SILENT" "GATEWAY"
 ask_user "DNS server(s) IP" "10.11.50.1, 8.8.8.8" "$ASSUME_YES" "$SILENT" "DNS"
 ask_user "Router name" "router1" "$ASSUME_YES" "$SILENT" "ROUTER_NAME"
-ask_user "Public network name" "" "$ASSUME_YES" "$SILENT" "PUBLIC_NET_NAME" # TODO: use this for IP allocation
 ask_user "External network ID" "0ff834d9-5f65-42bb-b1e9-542526a3c56e" "$ASSUME_YES" "$SILENT" "EXTERNAL_NET_NAME" # TODO: Automatically get ID... but need to speak with HPE team, I am unable to list the networks from command line right now (neutron net-list)
 
 
@@ -154,19 +153,18 @@ do
         - subnet_id: { get_resource: private_subnet }
 "
 
-    if [ -n "$PUBLIC_NET_NAME" ]; then
+    if [ -n "$EXTERNAL_NET_NAME" ]; then
         echo "  # Its floatting IP
   $1_floating_ip:
     type: OS::Neutron::FloatingIP
-      properties:
-        floating_network_id: { get_param: public_net }
-        port_id: { get_resource: $1_instance_port }
+    properties:
+      floating_network_id: $EXTERNAL_NET_NAME
+      port_id: { get_resource: $1_instance_port }
 "
-
     OUTPUTS="$OUTPUTS
   $1_instance_ip:
     description: The IP address of the deployed $1 instance
-    value: { get_attr: [$1_floating_ip, first_address] }"
+    value: { get_attr: [$1_floating_ip, floating_ip_address] }"
   else
     echo "  ## No public network given, service $1 will not be accessible publicly
 "
@@ -180,9 +178,17 @@ do
       flavor: m1.small
       networks:
         - port: { get_resource: $1_instance_port }
+      user_data_format: RAW
       user_data: |
         #!/bin/bash
+        # TODO: not debugged
+        echo 'Initialize MICSERV environment variable'
         echo 'export MICSERV=$1' >> /home/ubuntu/.bashrc
+        echo 'Define administrator password'
+        (
+          echo eee23ddd
+          echo eee23ddd
+        ) | passwd --stdin ubuntu
     description: This instance describes how to deploy the $1 microservice"
     
     # OUTPUTS="$OUTPUTS"
