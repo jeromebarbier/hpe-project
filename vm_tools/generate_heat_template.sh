@@ -3,6 +3,24 @@
 # To quickly generate a script, add the option -y           #
 #############################################################
 
+# Help
+if [ "$1" == "help" ]; then
+    echo ""
+    echo "Usage: $0 [options] <services>"
+    echo "Options:"
+    echo "   - -s: Don't generate other outputs than the HEAT template"
+    echo "   - -y: Don't ask for input (use default values for the template)"
+    echo "Services:"
+    echo "   - Enumerate the services you want to include in the template"
+    echo "Examples:"
+    echo "   - Generate a template with default values for services b, w and i:"
+    echo "      $0 -y -s b w i"
+    echo "   - Generate a personalized template for services b, w and i:"
+    echo "      $0 b w i"
+    echo ""
+    exit 0
+fi
+
 # Functions
 function ask_user() {
     # This function asks the user to give a value according to a question
@@ -10,45 +28,65 @@ function ask_user() {
     # $1 The question
     # $2 The default value
     # $3 Set to "yes" to automatically accept the default value
-    # $4 The variable to declare globally with the user's answer as value
+    # $4 Set to "yes" to not generate outputs (but still read inputs)
+    # $5 The variable to declare globally with the user's answer as value
     VAL=""
     
-    if [ "yes" != "$3" ]; then
+    if [ "yes" != "$4" ]; then
         printf "$1 [$2]: "
+    fi
+    
+    if [ "yes" != "$3" ]; then
         read VAL
+    else
+        if [ "yes" != "$4" ]; then
+            # Don't simulate user input if we're not supposed to output stuff!
+            echo "$2"
+        fi
     fi
     
     if [ -z "$VAL" ]; then
         VAL="$2"
     fi
     
-    printf -v "$4" "$VAL"
+    printf -v "$5" "$VAL"
 }
 
 # A bit of configuration
 ASSUME_YES="no"
-if [ "$1" == "-y" ]; then
-    ASSUME_YES="yes"
+SILENT="no"
+while true ;
+do
+    if [ "$1" == "-y" ]; then
+        ASSUME_YES="yes"
+    elif [ "$1" == "-s" ]; then
+        SILENT="yes"
+    else
+        break
+    fi
+    
     shift
-fi
+done
 
-ask_user "Private network name" "pnetwork" "$ASSUME_YES" "PRIVATE_NET_NAME"
-ask_user "Private network range (CIDR)" "10.0.1.0/24" "$ASSUME_YES" "CIDR"
-ask_user "Gateway" "10.0.1.254" "$ASSUME_YES" "GATEWAY"
-ask_user "DNS server IP" "10.11.50.1" "$ASSUME_YES" "DNS"
-ask_user "Router name" "router1" "$ASSUME_YES" "ROUTER_NAME"
-ask_user "Public network name" "" "$ASSUME_YES" "PUBLIC_NET_NAME"
+ask_user "Private network name" "pnetwork" "$ASSUME_YES" "$SILENT" "PRIVATE_NET_NAME"
+ask_user "Private network range (CIDR)" "10.0.2.0/24" "$ASSUME_YES" "$SILENT" "CIDR"
+ask_user "Private subnetwork name" "psnetwork" "$ASSUME_YES" "$SILENT" "PRIVATE_SUBNET_NAME"
+ask_user "Gateway" "10.0.2.254" "$ASSUME_YES" "$SILENT" "GATEWAY"
+ask_user "DNS server(s) IP" "10.11.50.1, 8.8.8.8" "$ASSUME_YES" "$SILENT" "DNS"
+ask_user "Router name" "router1" "$ASSUME_YES" "$SILENT" "ROUTER_NAME"
+ask_user "Public network name" "" "$ASSUME_YES" "$SILENT" "PUBLIC_NET_NAME"
 
 # Generator
 DATE=$(date)
+HOST=$(hostname)
 
 OUTPUTS=""
 
 echo "heat_template_version: 2015-10-15
-description: This template creates the whole stack, generated on $DATE"
+description: This template creates the whole stack, generated on $DATE using $HOST"
 
 echo ""
-echo "ressources:"
+echo "resources:"
 
 # Generates the security group, attached to the network
 echo "  #Description of the security group
@@ -80,9 +118,10 @@ echo "  # Description of network capabilities
   private_subnet:
     type: OS::Neutron::Subnet
     properties:
-      network_id: $PRIVATE_NET_NAME
+      network_id: { get_resource: private_net }
       cidr: $CIDR
-      dns: $DNS
+      name: $PRIVATE_SUBNET_NAME
+      dns_nameservers: [ $DNS ]
       gateway_ip: $GATEWAY
 
   router:
@@ -105,7 +144,7 @@ do
   $1_instance_port:
     type: OS::Neutron::Port
     properties:
-      network: private
+      network: { get_resource: private_net }
       security_groups: [ { get_resource: web_and_ssh_security_group } ]
       fixed_ips:
         - subnet_id: { get_resource: private_subnet }
@@ -119,6 +158,11 @@ do
         floating_network_id: { get_param: public_net }
         port_id: { get_resource: $1_instance_port }
 "
+
+    OUTPUTS="$OUTPUTS
+  $1_instance_ip:
+    description: The IP address of the deployed $1 instance
+    value: { get_attr: [$1_floating_ip, first_address] }"
   else
     echo "  ## No public network given, service $1 will not be accessible publicly
 "
@@ -130,18 +174,19 @@ do
     properties:
       image: ubuntu-deployement-v1
       flavor: m1.small
-      parameter: \"MICSERV=$1\"
-    networks:
-      - port: { get_resource: $1_instance_port }
+      networks:
+        - port: { get_resource: $1_instance_port }
+      user_data: |
+        #!/bin/bash
+        echo 'export MICSERV=$1' >> /home/ubuntu/.bashrc
     description: This instance describes how to deploy the $1 microservice"
     
-    OUTPUTS="$OUTPUTS
-  $1_instance_ip:
-    description: The IP address of the deployed $1 instance
-    value: { get_attr: [$1_floating_ip, first_address] }"
+    # OUTPUTS="$OUTPUTS"
     
     shift
 done
 
-echo ""
-echo "outputs:$OUTPUTS"
+if [ -n "$OUTPUTS" ]; then
+    echo ""
+    echo "outputs:$OUTPUTS"
+fi
