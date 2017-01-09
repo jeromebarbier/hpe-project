@@ -10,6 +10,8 @@ if [ "$1" == "help" ]; then
     echo "Options:"
     echo "   - -s: Don't generate other outputs than the HEAT template"
     echo "   - -y: Don't ask for input (use default values for the template)"
+    echo "   - -nfip: Generate the script without the floating IP allocation"
+    echo "   - -ps <name>: Name of the public server (which will get a floatting IP)"
     echo "Services:"
     echo "   - Enumerate the services you want to include in the template"
     echo "Examples:"
@@ -55,12 +57,19 @@ function ask_user() {
 # A bit of configuration
 ASSUME_YES="no"
 SILENT="no"
+FLOATING_IP="yes"
+PUBLIC_SERVER=""
 while true ;
 do
     if [ "$1" == "-y" ]; then
         ASSUME_YES="yes"
     elif [ "$1" == "-s" ]; then
         SILENT="yes"
+    elif [ "$1" == "-nfip" ]; then
+        FLOATING_IP="no"
+    elif [ "$1" == "-ps" ]; then
+        PUBLIC_SERVER="$2"
+        shift
     else
         break
     fi
@@ -153,7 +162,7 @@ do
         - subnet_id: { get_resource: private_subnet }
 "
 
-    if [ -n "$EXTERNAL_NET_NAME" ]; then
+    if [ -n "$EXTERNAL_NET_NAME" ] && [ "yes" == "$FLOATING_IP" ] && [ "$PUBLIC_SERVER" == "$1" ]; then
         echo "  # Its floatting IP
   $1_floating_ip:
     type: OS::Neutron::FloatingIP
@@ -162,13 +171,27 @@ do
       port_id: { get_resource: $1_instance_port }
 "
     OUTPUTS="$OUTPUTS
-  $1_instance_ip:
-    description: The IP address of the deployed $1 instance
+  # The floating IP address for service $1
+  $1_instance_floating_ip:
+    description: The floating IP address of the deployed $1 instance
     value: { get_attr: [$1_floating_ip, floating_ip_address] }"
-  else
-    echo "  ## No public network given, service $1 will not be accessible publicly
-"
   fi
+  
+    echo "  ## Its software config
+  $1_init:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config: |
+        #!/bin/sh
+        echo 'Initialize MICSERV environment variable'
+        echo 'export MICSERV=$1' >> /home/ubuntu/.bashrc
+        echo 'Define administrator password'
+        (
+          echo eee23ddd
+          echo eee23ddd
+        ) | passwd --stdin ubuntu
+"
   
     echo "  ## Its VM
   $1_instance:
@@ -178,20 +201,15 @@ do
       flavor: m1.small
       networks:
         - port: { get_resource: $1_instance_port }
-      user_data_format: RAW
-      user_data: |
-        #!/bin/bash
-        # TODO: not debugged
-        echo 'Initialize MICSERV environment variable'
-        echo 'export MICSERV=$1' >> /home/ubuntu/.bashrc
-        echo 'Define administrator password'
-        (
-          echo eee23ddd
-          echo eee23ddd
-        ) | passwd --stdin ubuntu
+      user_data:
+        get_resource: $1_init
     description: This instance describes how to deploy the $1 microservice"
     
-    # OUTPUTS="$OUTPUTS"
+    OUTPUTS="$OUTPUTS
+  # $1 server internal network IP address
+  $1_instance_internal_ip:
+    description: Fixed ip assigned to the server on private network
+    value: { get_attr: [$1_instance, networks, net0, 0]}"
     
     shift
 done
