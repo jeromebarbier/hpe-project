@@ -6,6 +6,20 @@ DATE=$(date)
 
 echo "$DATE: New execution started" >> $LOG
 
+if [ -n "$MICSERV" ]; then
+	echo "No \$MICSERV value, try to determine it from the hostname..." >> $LOG
+	# No service name, try to retrieve it by ourselve
+	PREC_HN_ELT=""
+	for HNE in $(hostname | sed s/-/\\n/g)
+	do
+		if [ "$HNE" == "instance" ]; then
+			MICSERV="$PREC_HN_ELT"
+		fi
+		PREC_HN_ELT="$HNE"
+	done
+	echo "... Value determined for \$MICSERV=$MICSERV" >> $LOG
+fi
+
 # If already setup, then don't re-execute
 if [ -d $FOLDER ]; then
 	echo "Already setup, nothing to deploy" >> $LOG
