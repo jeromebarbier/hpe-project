@@ -1,0 +1,13 @@
+[Unit]
+Description=cna service i
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/home/i/i.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+User=i
+
+[Install]
+WantedBy=multi-user.target
