@@ -16,6 +16,18 @@ UBUNTU="$2"
 NETWORK="$3"
 YES="$4"
 
+if [ -n "$SERVICE" ]; then
+	# No service name, try to retrieve it by ourselve
+	PREC_HN_ELT=""
+	for HNE in $(hostname | sed s/-/\\n/g)
+	do
+		if [ "$HNE" == "instance" ]; then
+			SERVICE="$PREC_HN_ELT"
+		fi
+		PREC_HN_ELT="$HNE"
+	done
+fi
+
 # Check pre-requisites
 echo "[DOING ] Checking openstack platform"
 
