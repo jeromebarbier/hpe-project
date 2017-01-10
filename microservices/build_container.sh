@@ -51,3 +51,8 @@ fi
 # Remove libs
 echo "  > Removing libs"
 rm -rf "$MICROSERVICE/lwswift"
+
+# Notify IP address to SWIFT
+IP=$(ifconfig ens3 | grep 'inet ' | cut -d' ' -f12 | sed 's/addr://')
+chmod +x notify_ip.sh
+./notify_ip.sh "$MICROSERVICE" "$IP"
