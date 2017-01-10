@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 LOG=/home/ubuntu/vm_init.log
 FOLDER="hpe_project"
 
