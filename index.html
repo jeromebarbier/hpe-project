@@ -1,0 +1,27 @@
+<html>
+<head>
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.1.1.min.js"></script>
+<title> WELCOME TO THE LOTTERY!!!!!!!!!</title>
+</head>
+<body>
+<script>
+var uid = window.location.hash.substr(1);
+
+var service_i = $.ajax("i/play/"+uid)
+  .always(function(data) {
+    console.log(data)
+  });
+var service_b = $.ajax("b/")
+  .always(function(data) {
+    console.log(data)
+  });
+var service_p = $.ajax("p")
+  .always(function(data) {
+    console.log(data)
+  });
+
+</script>
+<h1>LET'S GET READY TO RUMBLEEEEEEEEEEEEEEEEE</h1>
+<button id="play">PLAY!!!!!!</button>
+</body>
+</html>
