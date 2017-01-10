@@ -6,7 +6,7 @@ DATE=$(date)
 
 echo "$DATE: New execution started" >> $LOG
 
-if [ -n "$MICSERV" ]; then
+if [ -z "$MICSERV" ]; then
 	echo "No \$MICSERV value, try to determine it from the hostname..." >> $LOG
 	# No service name, try to retrieve it by ourselve
 	PREC_HN_ELT=""
