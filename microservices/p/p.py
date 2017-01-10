@@ -37,11 +37,12 @@ def api_picture(id):
     # Get picture
     lwsc = lwswift()
     picture = lwsc.get_object("gifts", id)
+    name = lwsc.get_object("gifts-names", id)
     if picture == None:
         resp = jsonify({})
         resp.status_code = 201
     else:
-        resp = json.dumps({'picture' : picture.decode('ascii')})
+        resp = jsonify({'img' : picture, 'name': name})
         resp.status_code = 200
     config.logger.info("*** End processing picture for id %s ***", id)
     add_headers(resp)

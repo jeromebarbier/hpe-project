@@ -389,3 +389,17 @@
 2017-01-05 14:22:27,144 :: INFO :: Starting Microservice p
 2017-01-05 14:22:28,144 :: INFO :: Starting Microservice p
 2017-01-05 14:22:31,319 :: INFO :: *** Start processing id 4444 ***
+2017-01-10 15:12:50,146 :: INFO :: Starting Microservice p
+2017-01-10 15:12:51,161 :: INFO :: Starting Microservice p
+2017-01-10 15:13:13,442 :: INFO :: *** Start processing id 4444 ***
+2017-01-10 15:13:35,606 :: INFO :: Starting Microservice p
+2017-01-10 15:13:37,003 :: INFO :: Starting Microservice p
+2017-01-10 15:13:37,373 :: INFO :: *** Start processing id 4444 ***
+2017-01-10 15:14:14,921 :: INFO :: Starting Microservice p
+2017-01-10 15:14:15,942 :: INFO :: Starting Microservice p
+2017-01-10 15:14:17,132 :: INFO :: *** Start processing id 4444 ***
+2017-01-10 15:14:17,982 :: INFO :: *** End processing picture for id 4444 ***
+2017-01-10 15:17:32,710 :: INFO :: Starting Microservice p
+2017-01-10 15:17:33,737 :: INFO :: Starting Microservice p
+2017-01-10 15:17:36,117 :: INFO :: *** Start processing id 4444 ***
+2017-01-10 15:17:36,979 :: INFO :: *** End processing picture for id 4444 ***
