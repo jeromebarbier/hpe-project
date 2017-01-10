@@ -1,0 +1,5 @@
+sudo apt-get install mysql-server
+sudo mysql -u root -p
+	create database prestashop;
+	use prestashop
+	<path_to_script>/prestashop_fullcustomer.dump.sql
