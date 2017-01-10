@@ -1,0 +1,7 @@
+version: "2"
+services:
+    s:
+        build:
+            context: .
+        ports:
+            - "8092:8092"
