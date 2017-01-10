@@ -40,12 +40,26 @@ if [ $? != 0 ]; then
     exit 2
 fi
 
+# Run before code
+if [ -f ./docker_before.sh ]; then
+	echo "Running before code..."
+	./docker_before.sh
+	echo "... End code before"
+fi
+
 # Build Docker picture
 echo "  > Creating Docker picture"
 sudo docker build -t b-service:latest "$MICROSERVICE"
 
 if [ $? -ne 0 ]; then
     echo "  ... Docker build failed, no image produced"
+fi
+
+# Run after code
+if [ -f ./docker_after.sh ]; then
+	echo "Running after code..."
+	./docker_after.sh
+	echo "... End code after"
 fi
 
 # Remove libs
