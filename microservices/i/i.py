@@ -32,11 +32,11 @@ def api_play(id):
 	config.logger.info("*** Start processing id %s ***", id)
 	cnx = mysql.connector.connect(user=sys.argv[1], password=sys.argv[2], host=sys.argv[3], database=sys.argv[4])
 	cursor = cnx.cursor()
-	query = ("SELECT id FROM prestashop.users WHERE id = '" + str(id) + "'")
+	query = ("SELECT id_customer FROM prestashop.ps_customer WHERE id_customer = '" + str(id) + "'")
 	cursor.execute(query)
-	out_str = "FALSE"	
+	out_str = "0"	
 	for (k) in cursor:
-		out_str = "TRUE"
+		out_str = str(int(id))
 		break
 	config.logger.info("*** End identifying id: %s ***", out_str)
 	data = {"auth": out_str}
