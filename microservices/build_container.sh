@@ -40,6 +40,9 @@ if [ $? != 0 ]; then
     exit 2
 fi
 
+# From now, only play with the service's folder
+cd $MICROSERVICE
+
 # Run before code
 if [ -f ./docker_before.sh ]; then
 	echo "Running before code..."
@@ -56,7 +59,7 @@ fi
 
 # Build Docker picture
 echo "  > Creating Docker picture"
-sudo docker build -t $MICROSERVICE-service:latest "$MICROSERVICE"
+sudo docker build -t $MICROSERVICE-service:latest .
 
 DOCKER_OK="ok"
 if [ $? -ne 0 ]; then
@@ -78,6 +81,9 @@ if [ -f ./docker_after.sh ]; then
 
 fi
 
+# From now, use the parent folder
+cd ..
+
 # Remove libs
 echo "  > Removing libs"
 rm -rf "$MICROSERVICE/lwswift"
@@ -98,9 +104,13 @@ if [ "$DOCKER_OK" == "ok" ]; then
     
     # Run service
     ## Try to detect proper port
-    PORT=(cat $MICROSERVICE/$MICROSERVICE.conf | grep "port" | sed 's/port.*=[^0-9]*//')
+    PORT=$(cat "$MICROSERVICE/$MICROSERVICE.conf" 2> /dev/null | grep "port" | sed 's/port.*=[^0-9]*//')
     echo "Service $MICROSERVICE port is $PORT"
-    sudo docker run -p $PORT:$PORT $MICROSERVICE
+    if [ -z "$PORT" ]; then
+        echo "... Invalid port, don't start Docker instance"
+    else
+        sudo docker run -dti -p $PORT:$PORT "$MICROSERVICE-service"
+    fi
 fi
 
 echo "Process ended"

@@ -1,0 +1,15 @@
+<VirtualHost *:*>
+    ProxyPreserveHost On
+    ProxyRequests Off
+
+    # Redirection for service b
+    ProxyPass /b http://10.0.1.13:8090/
+    ProxyPassReverse /b http://10.0.1.13:8090/
+
+    <Proxy>
+        Order Allow,Deny
+        Allow from all
+    </Proxy>
+
+    ServerName localhost
+</VirtualHost>
