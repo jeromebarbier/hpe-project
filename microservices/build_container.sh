@@ -109,7 +109,7 @@ if [ "$DOCKER_OK" == "ok" ]; then
     if [ -z "$PORT" ]; then
         echo "... Invalid port, don't start Docker instance"
     else
-        sudo docker run -dti -p $PORT:$PORT "$MICROSERVICE-service"
+        sudo docker run -p $PORT:$PORT "$MICROSERVICE-service"
     fi
 fi
 
