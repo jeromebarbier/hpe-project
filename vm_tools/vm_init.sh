@@ -1,4 +1,7 @@
 #!/bin/bash
+# Get environment variables
+. /home/ubuntu/.bashrc
+
 LOG=/home/ubuntu/vm_init.log
 FOLDER="hpe_project"
 

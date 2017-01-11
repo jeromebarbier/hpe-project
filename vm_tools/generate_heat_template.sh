@@ -243,6 +243,18 @@ echo "  # Description of network capabilities
 # Generate the first subnetwork
 generate_subnet
 
+# Generate RP dependancies
+RP_DEPENDS_ON=""
+for SERV in "$@"
+do
+    if [ "$SERV" != "rp" ] && [ "$SERV" != "-npn" ]; then
+        if [ ${#RP_DEPENDS_ON} != 0 ]; then
+            RP_DEPENDS_ON="$RP_DEPENDS_ON,"
+        fi
+        RP_DEPENDS_ON="$RP_DEPENDS_ON ${SERV}_instance"
+    fi
+done
+
 # Generates the servers description
 while [ -n "$1" ];
 do
@@ -307,14 +319,21 @@ do
       user_data:
         get_resource: $1_init
       user_data_format: SOFTWARE_CONFIG
-    description: This instance describes how to deploy the $1 microservice
-"
+    description: This instance describes how to deploy the $1 microservice"
+
+    if [ "$1" == "rp" ]; then
+        # RP depends on precedently generated ressources
+        echo "    depends_on: [$RP_DEPENDS_ON ]"
+    else
+        echo ""
+    fi
+
     
     OUTPUTS="$OUTPUTS
   # $1 server internal network IP address
   $1_instance_internal_ip:
     description: Fixed ip assigned to the server on private network
-    value: { get_attr: [$1_instance, networks, net0, 0]}"
+    value: { get_attr: [$1_instance, networks, net0, 0] }"
     
     shift
 done
