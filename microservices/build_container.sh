@@ -1,5 +1,9 @@
 #!/bin/bash
-# This script build the Docker container, including all libraries
+
+# This script build the Docker image, including all libraries
+# It also run the built Docker image
+
+# This script aim is to be run at each update in the given service
 
 if [ $# == 1 ] && [ "$1" == "help" ]; then
     echo "Usage: $0 <MICROSERVICE NAME>"
@@ -109,7 +113,13 @@ if [ "$DOCKER_OK" == "ok" ]; then
     if [ -z "$PORT" ]; then
         echo "... Invalid port, don't start Docker instance"
     else
-        sudo docker run -p $PORT:$PORT "$MICROSERVICE-service"
+
+        sudo docker run \
+          -e OS_TENANT_NAME='$OS_TENANT_NAME' \
+          -e OS_USERNAME='$OS_USERNAME' \
+          -e OS_PASSWORD='$OS_PASSWORD' \
+          -e OS_AUTH_URL='$OS_AUTH_URL' \
+          -p $PORT:$PORT "$MICROSERVICE-service"
     fi
 fi
 
