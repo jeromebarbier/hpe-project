@@ -12,7 +12,10 @@ from lwswift.lwswift import lwswift
 service = sys.argv[1]
 
 lws = lwswift()
-ip = lws.get_service(service)
 
-if (ip != None):
-    printf(ip)
+try:
+    ip = lws.get_service(service)
+    if (ip != None):
+        print(ip)
+except Exception:
+    pass
