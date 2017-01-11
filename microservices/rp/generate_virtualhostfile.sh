@@ -12,7 +12,7 @@
 DATE=$(date)
 HOST=$(hostname)
 
-if [ ! -h lwswift ]; then
+if [ ! -h lwswift ] && [ ! -d lwswift ]; then
     ln -s ../lwswift lwswift
 fi
 
