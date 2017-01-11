@@ -1,6 +1,8 @@
 import requests
 import swiftclient
 
+import os
+
 class lwswift:
     """
     This class provides a very high-level access to SWIFT's objects containers
@@ -11,10 +13,10 @@ class lwswift:
     container_services_directory    = "services-directory"
     
     # A bit of configuration
-    authurl  = "http://10.11.50.26:5000/v2.0"
-    tenant   = "project6"
-    user     = "groupe6"
-    password = "F4fSI0G2Q0Y="
+    authurl  = os.getenv("OS_AUTH_URL")
+    tenant   = os.getenv("OS_TENANT_NAME")
+    user     = os.getenv("OS_USERNAME")
+    password = os.getenv("OS_PASSWORD")
     
     def __init__(self):
         """
@@ -90,7 +92,8 @@ class lwswift:
             r, obj = self.connection.get_object(container, name)
             obj = obj.decode('utf-8')
         except Exception as e:
-            print(e)
+            # print(e)
+            pass # The return value for "error" is None
         return obj
     
     
