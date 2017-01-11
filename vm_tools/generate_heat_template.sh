@@ -293,6 +293,7 @@ do
         echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> /home/ubuntu/.bashrc
         echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> /home/ubuntu/.bashrc
         echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> /home/ubuntu/.bashrc
+        echo 'export OS_AUTH_URL="$OS_AUTH_URL"' >> /home/ubuntu/.bashrc
 "
   
     echo "  ## Its VM
