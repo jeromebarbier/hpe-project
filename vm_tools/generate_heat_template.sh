@@ -17,6 +17,7 @@ if [ "$1" == "help" ]; then
     echo "-nsn:"
     echo "   Inside the enumeration of instances, tells to put the following"
     echo "   microservices into a new subnetwork"
+    echo "Notice: You must source your openRC file to use this generator"
     echo "Examples:"
     echo "   - Generate a template with default values for services b, w and i:"
     echo "      $0 -y -s b w i"
@@ -155,6 +156,12 @@ function generate_subnet() {
 "
 }
 
+# Check if user sourced its OpenRC
+if [ -z "$OS_TENANT_NAME" ]; then
+    echo "Please source your openrc file before running this generator"
+    exit 1
+fi
+
 # A bit of configuration
 ASSUME_YES="no"
 SILENT="no"
@@ -281,11 +288,11 @@ do
         #!/bin/sh
         echo 'Initialize MICSERV environment variable'
         echo 'export MICSERV=$1' >> /home/ubuntu/.bashrc
-        echo 'Define administrator password'
-        (
-          echo eee23ddd
-          echo eee23ddd
-        ) | passwd --stdin ubuntu
+        
+        echo 'Add some environment variables required to access the Openstack setup'
+        echo 'export \$OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> /home/ubuntu/.bashrc
+        echo 'export \$OS_USERNAME=\"$OS_USERNAME\"' >> /home/ubuntu/.bashrc
+        echo 'export \$OS_PASSWORD=\"$OS_PASSWORD\"' >> /home/ubuntu/.bashrc
 "
   
     echo "  ## Its VM
@@ -298,6 +305,7 @@ do
         - port: { get_resource: $1_instance_port }
       user_data:
         get_resource: $1_init
+      user_data_format: SOFTWARE_CONFIG
     description: This instance describes how to deploy the $1 microservice
 "
     
