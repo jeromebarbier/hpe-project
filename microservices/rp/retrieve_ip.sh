@@ -17,5 +17,5 @@ try:
     ip = lws.get_service(service)
     if (ip != None):
         print(ip)
-except Exception:
+except:
     pass
