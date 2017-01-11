@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-"""Service P tests if the user has a picture or not"""
+"""Service S tells if a player has already played"""
 
 import base64
 import logging
@@ -11,15 +11,18 @@ import pprint
 import os
 import random
 import time
-import json
 import subprocess
 import sys
 from flask import Flask
 from flask import jsonify
 from flask import request
 import config
-import swiftclient
-sys.path.append('..')
+
+import requests
+
+# Import SWIFT lib
+import sys
+sys.path.append('..') # Your path should contain the path to the folder "microservices"
 from lwswift.lwswift import lwswift
 
 # Initialise Flask
@@ -29,22 +32,28 @@ app.debug = True
 # Affect app logger to a global variable so logger can be used elsewhere.
 config.logger = app.logger
 
-
-@app.route("/<id>", methods=["GET"])
-def api_picture(id):
-    """Get the picture for user <id>"""
-    config.logger.info("*** Start processing id %s ***", id)
-    # Get picture
-    lwsc = lwswift()
-    picture = lwsc.get_object("gifts", id)
-    name = lwsc.get_object("gifts-names", id)
-    if picture == None:
-        resp = jsonify({})
-        resp.status_code = 201
+@app.route("/checkPlayed/<uid>")
+def click(uid):
+    config.logger.info("Checking if a player has played...")
+    lwsc = lwswift() # We will have to contact SWIFT
+    
+    # Process save on Swift
+    price = lwsc.get_object(lwswift.container_pictures_name, uid)
+    if price is None:
+        data = {
+        "html": "<p>User " + uid + " has not played yet.</p>"
+    }
     else:
-        resp = jsonify({'img' : picture, 'name': name})
-        resp.status_code = 200
-    config.logger.info("*** End processing picture for id %s ***", id)
+        data = {
+        "html": "<p>User " + uid + " has already played.</p>"
+    }
+
+    resp = jsonify(data);
+
+    resp.status_code = 200
+
+    resp.headers["AuthorSite"] = "https://github.com/jeromebarbier/hpe-project"
+
     add_headers(resp)
     return resp
 
@@ -53,31 +62,24 @@ def api_picture(id):
 def shutdown():
     """Shutdown server"""
     shutdown_server()
-    config.logger.info("Stopping %s...", config.p.NAME)
+    config.logger.info("Stopping %s...", config.s.NAME)
     return "Server shutting down..."
-
 
 @app.route("/", methods=["GET"])
 def api_root():
     """Root url, provide service name and version"""
     data = {
-        "Service": config.p.NAME,
-        "Version": config.p.VERSION
+        "Service": config.s.NAME,
+        "Version": config.s.VERSION
     }
 
     resp = jsonify(data)
     resp.status_code = 200
 
-    resp.headers["AuthorSite"] = "https://github.com/uggla/openstack_lab"
+    resp.headers["AuthorSite"] = "https://github.com/jeromebarbier/hpe-project"
 
     add_headers(resp)
     return resp
-
-
-def listprices(path):
-    onlyfiles = [f for f in os.listdir(path)
-                 if os.path.isfile(os.path.join(path, f))]
-    return onlyfiles
 
 
 def shutdown_server():
@@ -95,7 +97,7 @@ def configure_logger(logger, logfile):
     file_handler = RotatingFileHandler(logfile, "a", 1000000, 1)
 
     # Add logger to file
-    if (config.p.conf_file.get_p_debug().title() == 'True'):
+    if (config.s.conf_file.get_s_debug().title() == 'True'):
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
@@ -111,7 +113,7 @@ def add_headers(response):
 
 if __name__ == "__main__":
     # Vars
-    app_logfile = "p.log"
+    app_logfile = "s.log"
 
     # Change diretory to script one
     try:
@@ -123,10 +125,10 @@ if __name__ == "__main__":
     pp = pprint.PrettyPrinter(indent=4)
 
     # Initialise apps
-    config.initialise_p()
+    config.initialise_s()
 
     # Configure Flask logger
     configure_logger(app.logger, app_logfile)
 
-    config.logger.info("Starting %s", config.p.NAME)
-    app.run(port=int(config.p.conf_file.get_p_port()), host='0.0.0.0')
+    config.logger.info("Starting %s", config.s.NAME)
+    app.run(port=int(config.s.conf_file.get_s_port()), host='0.0.0.0')

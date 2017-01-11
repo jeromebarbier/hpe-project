@@ -4,7 +4,7 @@ import configparser
 
 # Initialise global variable
 logger = None
-w = None
+p = None
 
 
 def initialise_p():
@@ -13,7 +13,7 @@ def initialise_p():
     p = P()
 
 
-class W(object):
+class P(object):
     def __init__(self):
         self.NAME = "Microservice p"
         self.VERSION = "0.1"

@@ -1,13 +1,16 @@
-FROM debian:jessie
+FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && \
-apt-get install -y python3 python3-flask
-RUN apt-get install -y imagemagick
-RUN useradd w
-COPY config.py w.conf w.py /home/w/
-COPY prices /home/w/prices/
-RUN chown -R w:w /home/w/
-EXPOSE 8090
-USER w
-WORKDIR /home/w
-CMD ["./w.py"]
+RUN apt-get update
+RUN apt-get install -y python3\
+			python3-flask\
+			python3-keystoneclient
+RUN apt-get install -y python3-swiftclient
+RUN useradd p
+COPY config.py p.conf p.py /home/p/
+COPY lwswift/__init__.py lwswift/lwswift.py /home/p/lwswift
+RUN chown -R p:p /home/p/
+EXPOSE 8091
+USER p
+WORKDIR /home/p
+
+CMD ["usr/bin/python3", "./p.py"]

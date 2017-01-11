@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-"""Service P tests if the user has a picture or not"""
+"""Service I to identify and authenticate the customer"""
 
 import base64
 import logging
@@ -11,16 +11,13 @@ import pprint
 import os
 import random
 import time
-import json
 import subprocess
 import sys
 from flask import Flask
 from flask import jsonify
 from flask import request
 import config
-import swiftclient
-sys.path.append('..')
-from lwswift.lwswift import lwswift
+import mysql.connector
 
 # Initialise Flask
 app = Flask(__name__)
@@ -30,30 +27,32 @@ app.debug = True
 config.logger = app.logger
 
 
-@app.route("/<id>", methods=["GET"])
-def api_picture(id):
-    """Get the picture for user <id>"""
-    config.logger.info("*** Start processing id %s ***", id)
-    # Get picture
-    lwsc = lwswift()
-    picture = lwsc.get_object("gifts", id)
-    name = lwsc.get_object("gifts-names", id)
-    if picture == None:
-        resp = jsonify({})
-        resp.status_code = 201
-    else:
-        resp = jsonify({'img' : picture, 'name': name})
-        resp.status_code = 200
-    config.logger.info("*** End processing picture for id %s ***", id)
-    add_headers(resp)
-    return resp
+@app.route("/play/<id>")
+def api_play(id):
+	config.logger.info("*** Start processing id %s ***", id)
+	cnx = mysql.connector.connect(user=sys.argv[1], password=sys.argv[2], host=sys.argv[3], database=sys.argv[4])
+	cursor = cnx.cursor()
+	query = ("SELECT id_customer FROM prestashop.ps_customer WHERE id_customer = '" + str(id) + "'")
+	cursor.execute(query)
+	out_str = "0"	
+	for (k) in cursor:
+		out_str = str(int(id))
+		break
+	config.logger.info("*** End identifying id: %s ***", out_str)
+	data = {"auth": out_str}
+	resp = jsonify(data)
+	resp.status_code = 200
+	config.logger.info("*** End processing id %s ***", id)
+	add_headers(resp)
+	cnx.close()
+	return resp
 
 
 @app.route("/shutdown", methods=["POST"])
 def shutdown():
     """Shutdown server"""
     shutdown_server()
-    config.logger.info("Stopping %s...", config.p.NAME)
+    config.logger.info("Stopping %s...", config.i.NAME)
     return "Server shutting down..."
 
 
@@ -61,8 +60,8 @@ def shutdown():
 def api_root():
     """Root url, provide service name and version"""
     data = {
-        "Service": config.p.NAME,
-        "Version": config.p.VERSION
+        "Service": config.i.NAME,
+        "Version": config.i.VERSION
     }
 
     resp = jsonify(data)
@@ -95,7 +94,7 @@ def configure_logger(logger, logfile):
     file_handler = RotatingFileHandler(logfile, "a", 1000000, 1)
 
     # Add logger to file
-    if (config.p.conf_file.get_p_debug().title() == 'True'):
+    if (config.i.conf_file.get_i_debug().title() == 'True'):
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
@@ -111,7 +110,7 @@ def add_headers(response):
 
 if __name__ == "__main__":
     # Vars
-    app_logfile = "p.log"
+    app_logfile = "i.log"
 
     # Change diretory to script one
     try:
@@ -123,10 +122,10 @@ if __name__ == "__main__":
     pp = pprint.PrettyPrinter(indent=4)
 
     # Initialise apps
-    config.initialise_p()
+    config.initialise_i()
 
     # Configure Flask logger
     configure_logger(app.logger, app_logfile)
 
-    config.logger.info("Starting %s", config.p.NAME)
-    app.run(port=int(config.p.conf_file.get_p_port()), host='0.0.0.0')
+    config.logger.info("Starting %s", config.i.NAME)
+    app.run(port=int(config.i.conf_file.get_i_port()), host='0.0.0.0')

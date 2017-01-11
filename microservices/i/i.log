@@ -1,0 +1,39 @@
+2017-01-05 16:51:11,187 :: INFO :: Starting Microservice i
+2017-01-05 16:51:11,321 :: INFO :: Starting Microservice i
+2017-01-05 16:53:01,847 :: INFO :: Starting Microservice i
+2017-01-05 16:53:01,983 :: INFO :: Starting Microservice i
+2017-01-05 16:55:00,062 :: INFO :: *** Start processing id 1 ***
+2017-01-05 19:18:50,649 :: INFO :: Starting Microservice i
+2017-01-05 19:18:51,124 :: INFO :: Starting Microservice i
+2017-01-05 19:19:16,551 :: INFO :: *** Start processing id 1 ***
+2017-01-05 19:19:23,424 :: INFO :: *** Start processing id 1 ***
+2017-01-05 19:21:20,816 :: INFO :: *** Start processing id 1 ***
+2017-01-05 19:22:59,471 :: INFO :: Starting Microservice i
+2017-01-05 19:23:05,150 :: INFO :: Starting Microservice i
+2017-01-05 19:23:09,427 :: INFO :: Starting Microservice i
+2017-01-05 19:23:09,901 :: INFO :: Starting Microservice i
+2017-01-05 19:23:11,937 :: INFO :: *** Start processing id 1 ***
+2017-01-05 19:23:53,911 :: INFO :: Starting Microservice i
+2017-01-05 19:23:58,088 :: INFO :: Starting Microservice i
+2017-01-05 19:23:58,557 :: INFO :: Starting Microservice i
+2017-01-05 19:24:00,241 :: INFO :: *** Start processing id 1 ***
+2017-01-05 19:24:00,259 :: INFO :: *** End identifying id: TRUE ***
+2017-01-05 19:25:38,432 :: INFO :: *** Start processing id 2 ***
+2017-01-05 19:25:38,452 :: INFO :: *** End identifying id: TRUE ***
+2017-01-05 19:26:46,353 :: INFO :: Starting Microservice i
+2017-01-05 19:26:49,243 :: INFO :: Starting Microservice i
+2017-01-05 19:26:49,810 :: INFO :: Starting Microservice i
+2017-01-05 19:26:51,064 :: INFO :: *** Start processing id 2 ***
+2017-01-05 19:26:51,082 :: INFO :: *** End identifying id: FALSE ***
+2017-01-05 19:31:07,362 :: INFO :: Starting Microservice i
+2017-01-05 19:31:07,852 :: INFO :: Starting Microservice i
+2017-01-05 19:31:10,761 :: INFO :: *** Start processing id 2 ***
+2017-01-05 19:31:10,781 :: INFO :: *** End identifying id: FALSE ***
+2017-01-05 19:52:59,987 :: INFO :: Starting Microservice i
+2017-01-05 19:53:00,468 :: INFO :: Starting Microservice i
+2017-01-05 19:53:24,283 :: INFO :: *** Start processing id 1 ***
+2017-01-05 19:53:24,303 :: INFO :: *** End identifying id: TRUE ***
+2017-01-05 19:53:24,305 :: INFO :: *** End processing id 1 ***
+2017-01-05 19:57:06,976 :: INFO :: *** Start processing id 2 ***
+2017-01-05 19:57:06,995 :: INFO :: *** End identifying id: FALSE ***
+2017-01-05 19:57:06,997 :: INFO :: *** End processing id 2 ***
