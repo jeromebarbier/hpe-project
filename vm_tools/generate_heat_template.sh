@@ -290,9 +290,9 @@ do
         echo 'export MICSERV=$1' >> /home/ubuntu/.bashrc
         
         echo 'Add some environment variables required to access the Openstack setup'
-        echo 'export \$OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> /home/ubuntu/.bashrc
-        echo 'export \$OS_USERNAME=\"$OS_USERNAME\"' >> /home/ubuntu/.bashrc
-        echo 'export \$OS_PASSWORD=\"$OS_PASSWORD\"' >> /home/ubuntu/.bashrc
+        echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> /home/ubuntu/.bashrc
+        echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> /home/ubuntu/.bashrc
+        echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> /home/ubuntu/.bashrc
 "
   
     echo "  ## Its VM
