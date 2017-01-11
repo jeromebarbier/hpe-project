@@ -90,7 +90,8 @@ class lwswift:
             r, obj = self.connection.get_object(container, name)
             obj = obj.decode('utf-8')
         except Exception as e:
-            print(e)
+            # print(e)
+            pass # The return value for "error" is None
         return obj
     
     
