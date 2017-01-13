@@ -115,10 +115,10 @@ if [ "$DOCKER_OK" == "ok" ]; then
     else
 
         sudo docker run \
-          -e OS_TENANT_NAME='$OS_TENANT_NAME' \
-          -e OS_USERNAME='$OS_USERNAME' \
-          -e OS_PASSWORD='$OS_PASSWORD' \
-          -e OS_AUTH_URL='$OS_AUTH_URL' \
+          -e OS_TENANT_NAME="$OS_TENANT_NAME" \
+          -e OS_USERNAME="$OS_USERNAME" \
+          -e OS_PASSWORD="$OS_PASSWORD" \
+          -e OS_AUTH_URL="$OS_AUTH_URL" \
           -p $PORT:$PORT "$MICROSERVICE-service"
     fi
 fi

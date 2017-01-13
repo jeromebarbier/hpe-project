@@ -8,9 +8,9 @@ RUN apt-get -y install python3\
 RUN apt-get -y install python3-swiftclient
 RUN useradd s
 COPY config.py s.conf s.py /home/s/s/
-COPY lwswift/__init__.py lwswift/lwswift.py /home/b/lwswift/
+COPY lwswift/__init__.py lwswift/lwswift.py /home/s/lwswift/
 RUN chown -R s:s /home/s/
-EXPOSE 8091
+EXPOSE 8094
 USER s
 WORKDIR /home/s/s
 

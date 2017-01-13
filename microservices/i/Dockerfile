@@ -9,8 +9,7 @@ RUN chown -R i:i /home/i/
 RUN chmod +x /home/i/create_database.sh
 RUN /home/i/create_database.sh
 CMD ["cat", "/etc/mysql/my.cnf"]
-EXPOSE 3306
-EXPOSE 8090
+EXPOSE 8093
 USER i
 WORKDIR /home/i
 CMD ["/usr/bin/python3", "i.py", "root", "debian", "localhost", "prestashop"]
