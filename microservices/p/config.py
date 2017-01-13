@@ -16,7 +16,7 @@ def initialise_p():
 class P(object):
     def __init__(self):
         self.NAME = "Microservice p"
-        self.VERSION = "0.1"
+        self.VERSION = "1.0"
         #
         # Configuration file
         self.conf_file = pConfiguration("p.conf")

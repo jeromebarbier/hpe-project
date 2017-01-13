@@ -1,18 +1,18 @@
 # Service p
 
-OUAIS OUAIS ON VERRA MAIS C'EST P EN FAIT
+Gets the picture corresponding to the provided user id
 
 ## Dependencies
 
 - Python 3
-- Imagemagick
 - Flask (python3-flask)
+- Swiftclient
 
 ## Configuration file
 
 ```
-[w]
-port=8090
+[p]
+port=8092
 tmpfile=/tmp
 tempo=5
 debug=False
@@ -35,24 +35,24 @@ Return service name and version
 ```json
 {
 
-    "Service": "Microservice w",
-    "Version": "0.1"
+    "Service": "Microservice p",
+    "Version": "1.0"
 
 }
 ```
 
 ## Request
-GET /play/id
+GET /id
 
 ### Response
 
-Return price and base64 image data
+Return image and price name
 
 ```json
 {
 
     "img": "/9j/4AAQSkZJRgABAQEASABIAAD/7RPqUGhvdG9zaG9wIDMuMAA4QklNBCUAAAAAABAAAAAAAAAAAAAAAAAAAAAAOEJJTQPtAAAAAAAQAEgAAAABAAIASAAAAAEAAjhCSU0EJgAAAAAADgAAAAAAAAAAAAA/gAAAOEJJTQQNAAAAAAAEAAAAHjh...
-    "price": "usbkey.jpg"
+    "name": "usbkey.jpg"
 
 }
 ```
