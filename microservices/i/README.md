@@ -1,4 +1,4 @@
-# Service w
+# Service i
 
 The purpose of this service is to define if the player win something.
 A price is ramdomly selected, and an image is generated with the id of the player.
@@ -48,14 +48,11 @@ GET /play/id
 
 ### Response
 
-Return price and base64 image data
+Return the id if it exists in users database, else 0
 
 ```json
 {
-
-    "img": "/9j/4AAQSkZJRgABAQEASABIAAD/7RPqUGhvdG9zaG9wIDMuMAA4QklNBCUAAAAAABAAAAAAAAAAAAAAAAAAAAAAOEJJTQPtAAAAAAAQAEgAAAABAAIASAAAAAEAAjhCSU0EJgAAAAAADgAAAAAAAAAAAAA/gAAAOEJJTQQNAAAAAAAEAAAAHjh...
-    "price": "usbkey.jpg"
-
+    "auth": id
 }
 ```
 
