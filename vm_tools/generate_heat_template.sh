@@ -190,7 +190,8 @@ ask_user "First private network range (CIDR)" "10.0.2.0/24" "$ASSUME_YES" "$SILE
 ask_user "Private subnetwork name" "psnetwork" "$ASSUME_YES" "$SILENT" "PRIVATE_SUBNET_NAME"
 ask_user "DNS server(s) IP" "10.11.50.1, 8.8.8.8" "$ASSUME_YES" "$SILENT" "DNS"
 ask_user "Router name" "router1" "$ASSUME_YES" "$SILENT" "ROUTER_NAME"
-ask_user "External network ID" "0ff834d9-5f65-42bb-b1e9-542526a3c56e" "$ASSUME_YES" "$SILENT" "EXTERNAL_NET_NAME" # TODO: Automatically get ID... but need to speak with HPE team, I am unable to list the networks from command line right now (neutron net-list)
+ask_user "External network ID" "0ff834d9-5f65-42bb-b1e9-542526a3c56e" "$ASSUME_YES" "$SILENT" "EXTERNAL_NET_NAME"
+ask_user "SSH key to use path" "$HOME/.ssh/id_rsa.pub" "$ASSUME_YES" "$SILENT" "SSH_KEY"
 
 
 # Generator
@@ -198,6 +199,12 @@ DATE=$(date)
 HOST=$(hostname)
 
 OUTPUTS=""
+
+SSH_KEY=$(cat "$SSH_KEY")
+if [ $? != 0 ]; then
+    echo "SSH key cannot be found at $SSH_KEY"
+    exit 1
+fi
 
 echo "heat_template_version: 2015-10-15
 description: This template creates the whole stack, generated on $DATE using $HOST"
@@ -290,7 +297,13 @@ do
     description: The floating IP address of the deployed $1 instance
     value: { get_attr: [$1_floating_ip, floating_ip_address] }"
   fi
-  
+
+    VMU="ubuntu"
+    VMU_HOME="/home/$VMU/"
+    VMU_HPE_PROJECT="${VMU_HOME}hpe-project/"
+    BUILD_CALLER_NAME="hpe_build_caller"
+    BUILD_CALLER="/etc/init.d/$BUILD_CALLER_NAME"
+
     echo "  ## Its software config
   $1_init:
     type: OS::Heat::SoftwareConfig
@@ -298,21 +311,45 @@ do
       group: ungrouped
       config: |
         #!/bin/sh
+        echo 'Start to prepare the VM for service'
+        
         echo 'Initialize MICSERV environment variable'
-        echo 'export MICSERV=$1' >> /home/ubuntu/.bashrc
+        echo 'export MICSERV=\"$1\"' >> $VMU_HOME.bashrc
         
         echo 'Add some environment variables required to access the Openstack setup'
-        echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> /home/ubuntu/.bashrc
-        echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> /home/ubuntu/.bashrc
-        echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> /home/ubuntu/.bashrc
-        echo 'export OS_AUTH_URL="$OS_AUTH_URL"' >> /home/ubuntu/.bashrc
+        echo 'export OS_AUTH_URL="$OS_AUTH_URL"' >> $VMU_HOME.bashrc
+        echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> $VMU_HOME.bashrc
+        echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> $VMU_HOME.bashrc
+        echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> $VMU_HOME.bashrc
+
+        echo 'Authorize user to log via its SSH Key'
+        echo '$SSH_KEY' >> $VMU_HOME.ssh/authorized_keys
+
+        # Update system
+        # TODO: apt-get -y install docker.io git cron python-swiftclient
+
+        # Get GIT repository
+        mkdir $VMU_HPE_PROJECT
+        git clone https://github.com/jeromebarbier/hpe-project.git $VMU_HPE_PROJECT
+        # chown -R $VMU:$VMU $VMU_HPE_PROJECT
+
+        # Setup the service deployement
+        echo 'Setup deployement scripts to be run on boot end'
+        chmod +x ${VMU_HPE_PROJECT}microservices/build_container.sh $1
+        
+        . $VMU_HOME/.bashrc
+        cd ${VMU_HPE_PROJECT}microservices
+        echo "$PWD"
+        ./build_container.sh $MICSERV
+
+        echo 'Finished to prepare the VM for service, have fun!'
 "
   
     echo "  ## Its VM
   $1_instance:
     type: OS::Nova::Server
     properties:
-      image: ubuntu-deployement-v1
+      image: ubuntu1404
       flavor: m1.small
       networks:
         - port: { get_resource: $1_instance_port }

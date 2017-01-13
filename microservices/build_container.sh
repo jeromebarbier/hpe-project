@@ -27,8 +27,8 @@ fi
 MICROSERVICE="$1"
 
 # The microservice's name is correct
-echo "$MICROSERVICE" | egrep "^..?$" > /dev/null 2> /dev/null && ls "$MICROSERVICE" > /dev/null 2> /dev/null
-if [ $? != 0 ]; then
+# echo "$MICROSERVICE" | egrep "^.$" > /dev/null 2> /dev/null && ls "$MICROSERVICE" > /dev/null 2> /dev/null
+if [ ! -d "$MICROSERVICE" ]; then
     echo "Microservice $MICROSERVICE is not a buildable microservice, available are:"
     ls | egrep "^..?$"
     exit 3
