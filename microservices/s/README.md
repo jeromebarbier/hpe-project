@@ -11,7 +11,7 @@ Checking if a player has already played
 
 ```
 [s]
-port=8092
+port=8094
 tmpfile=/tmp
 tempo=5
 debug=False
