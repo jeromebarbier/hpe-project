@@ -11,7 +11,7 @@ Button widget allowing the customer to play
 
 ```
 [b]
-port=8090
+port=8091
 tmpfile=/tmp
 tempo=5
 debug=False
