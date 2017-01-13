@@ -7,14 +7,14 @@ The ourput is a json with the price and the image data.
 ## Dependencies
 
 - Python 3
-- Imagemagick
 - Flask (python3-flask)
+- MySQL
 
 ## Configuration file
 
 ```
 [i]
-port=8090
+port=8093
 tmpfile=/tmp
 tempo=5
 debug=False
