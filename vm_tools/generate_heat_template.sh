@@ -301,8 +301,8 @@ do
     VMU="ubuntu"
     VMU_HOME="/home/$VMU/"
     VMU_HPE_PROJECT="${VMU_HOME}hpe-project/"
-    BUILD_CALLER_NAME="hpe_build_caller"
-    BUILD_CALLER="/etc/init.d/$BUILD_CALLER_NAME"
+    VMU_PROJECT_CONF_FILE_NAME="dynamite"
+    VMU_PROJECT_CONF_FILE="$VMU_HOME.$VMU_PROJECT_CONF_FILE_NAME"
 
     echo "  ## Its software config
   $1_init:
@@ -311,38 +311,39 @@ do
       group: ungrouped
       config: |
         #!/bin/sh
-        echo 'Start to prepare the VM for service'
+        echo '***************************************'
+        echo '* Start to prepare the VM for service *'
+        echo '***************************************'
         
-        echo 'Initialize MICSERV environment variable'
-        echo 'export MICSERV=\"$1\"' >> $VMU_HOME.bashrc
+        echo '** Initialize MICSERV environment variable to value $1 **'
+        echo 'export MICSERV=\"$1\"' >> $VMU_PROJECT_CONF_FILE
         
-        echo 'Add some environment variables required to access the Openstack setup'
-        echo 'export OS_AUTH_URL="$OS_AUTH_URL"' >> $VMU_HOME.bashrc
-        echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> $VMU_HOME.bashrc
-        echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> $VMU_HOME.bashrc
-        echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> $VMU_HOME.bashrc
+        echo '** Add some environment variables required to access the Openstack setup **'
+        echo 'export OS_AUTH_URL="$OS_AUTH_URL"' >> $VMU_PROJECT_CONF_FILE
+        echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> $VMU_PROJECT_CONF_FILE
+        echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> $VMU_PROJECT_CONF_FILE
+        echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> $VMU_PROJECT_CONF_FILE
 
-        echo 'Authorize user to log via its SSH Key'
+        echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
+
+        echo '** Authorize user to log via its SSH Key **'
         echo '$SSH_KEY' >> $VMU_HOME.ssh/authorized_keys
 
-        # Update system
-        # TODO: apt-get -y install docker.io git cron python-swiftclient
+        echo '** Setting up Docker and Swiftclient lib **'
+        apt-get -y install docker.io git python-swiftclient
 
-        # Get GIT repository
+        echo '** Get service code from GIT repository **'
         mkdir $VMU_HPE_PROJECT
         git clone https://github.com/jeromebarbier/hpe-project.git $VMU_HPE_PROJECT
-        # chown -R $VMU:$VMU $VMU_HPE_PROJECT
 
-        # Setup the service deployement
-        echo 'Setup deployement scripts to be run on boot end'
-        chmod +x ${VMU_HPE_PROJECT}microservices/build_container.sh $1
-        
-        . $VMU_HOME/.bashrc
-        cd ${VMU_HPE_PROJECT}microservices
-        echo "$PWD"
-        ./build_container.sh $MICSERV
+        echo '** Start service deployement **'
+        chmod +x ${VMU_HPE_PROJECT}microservices/build_container.sh
+        /bin/bash -c 'source $VMU_PROJECT_CONF_FILE; echo Source result=\$?; cd ${VMU_HPE_PROJECT}microservices; echo \$(env); ./build_container.sh \$MICSERV'
+        echo '** Service deployement script executed **'
 
-        echo 'Finished to prepare the VM for service, have fun!'
+        echo '*****************************************************'
+        echo '* Finished to prepare the VM for service, have fun! *'
+        echo '*****************************************************'
 "
   
     echo "  ## Its VM

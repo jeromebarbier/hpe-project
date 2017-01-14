@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 # This script tells the SWIFT container wich IP address is assignated to the
 # microservice instance

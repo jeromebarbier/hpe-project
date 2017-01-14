@@ -65,10 +65,12 @@ fi
 echo "  > Creating Docker picture"
 sudo docker build -t $MICROSERVICE-service:latest .
 
-DOCKER_OK="ok"
-if [ $? -ne 0 ]; then
-    echo "  ... Docker build failed, no image produced"
+DOCKER_OK="$?"
+if [ "$DOCKER_OK" != "0" ]; then
+    echo "  ... Docker build failed, no image produced (so docker run will not be executed but after code will)"
     DOCKER_OK="nok"
+else
+    DOCKER_OK="ok"
 fi
 
 # Run after code
@@ -119,7 +121,7 @@ if [ "$DOCKER_OK" == "ok" ]; then
           -e OS_USERNAME="$OS_USERNAME" \
           -e OS_PASSWORD="$OS_PASSWORD" \
           -e OS_AUTH_URL="$OS_AUTH_URL" \
-          -p $PORT:$PORT "$MICROSERVICE-service"
+          -p $PORT:$PORT "$MICROSERVICE-service" &
     fi
 fi
 
