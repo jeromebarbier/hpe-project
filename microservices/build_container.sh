@@ -116,12 +116,17 @@ if [ "$DOCKER_OK" == "ok" ]; then
         echo "... Invalid port, don't start Docker instance"
     else
 
+        CONVENTIONNAL_PORT=8090
+        if [ "$MICROSERVICE" == "rp" ]; then
+            CONVENTIONNAL_PORT=80 # Make RP public !
+        fi
+
         sudo docker run -d \
           -e OS_TENANT_NAME="$OS_TENANT_NAME" \
           -e OS_USERNAME="$OS_USERNAME" \
           -e OS_PASSWORD="$OS_PASSWORD" \
           -e OS_AUTH_URL="$OS_AUTH_URL" \
-          -p $PORT:$PORT "$MICROSERVICE-service"
+          -p $CONVENTIONNAL_PORT:$PORT "$MICROSERVICE-service"
           
         if [ $? != 0 ]; then
             # Remain there had been an error !

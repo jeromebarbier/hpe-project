@@ -23,8 +23,10 @@ if [ "$1" == "help" ]; then
     echo "      $0 -y -s b w i"
     echo "   - Generate a personalized template for services b, w and i:"
     echo "      $0 b w i"
-    echo "   - Generates the microservices b and w on 2 different networks"
+    echo "   - Generates the microservices b and w on 2 different networks:"
     echo "      $0 b -nsn w"
+    echo "   - Generates the HPE TP whole configuration:"
+    echo "      $0 -ps rp rp b w s p -npn i"
     echo ""
     exit 0
 fi
@@ -364,24 +366,26 @@ do
             chmod +x ${VMU_HPE_PROJECT}microservices/build_container.sh
 
             # Directly use bash to be able to handle an environment
-            /bin/bash -c 'source $VMU_PROJECT_CONF_FILE;
-                          cd ${VMU_HPE_PROJECT}microservices;
-                          ./build_container.sh \$MICSERV;
-                          DEPLOYEMENT_STATE=\$?;
-                          echo \"** Service deployement script executed, result=\$DEPLOYEMENT_STATE (should be 0 to be ok) **\";
-"
+            /bin/bash -c 'source $VMU_PROJECT_CONF_FILE
+                          cd ${VMU_HPE_PROJECT}microservices
+                          ./build_container.sh \$MICSERV
+                          DEPLOYEMENT_STATE=\$?
+                          echo \"** Service deployement script executed, DEPLOYEMENT_STATE=\$DEPLOYEMENT_STATE (should be 0 to be ok) **\"
+                          # Propagate result
+                          exit \$DEPLOYEMENT_STATE'"
 if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
     echo "
-                          echo \"** Send a signal to rp **\";
-                          if [ \$DEPLOYEMENT_STATE == 0]; then
-                              echo \"** Deployement succeeds, send a notification of success to HEAT\";
-                              wc_notify --data-binary \'{\"status\": \"SUCCESS\"}\';
-                          else
-                              echo \"** Deployement failed, send a notification of failure to HEAT\";
-                              wc_notify --data-binary \'{\"status\": \"FAILURE\"}\';
-                          fi"
+            # Receive result from subprocess
+            DEPLOYEMENT_STATE=\$?
+            echo \"** Send a signal to rp (DEPLOYEMENT_STATE=\$DEPLOYEMENT_STATE) **\"
+            if [ \$DEPLOYEMENT_STATE -eq 0 ]; then
+                echo \"** Deployement succeeds, send a notification of success to HEAT\"
+                wc_notify --data-binary '{\"status\": \"SUCCESS\"}'
+            else
+                echo \"** Deployement failed, send a notification of failure to HEAT\"
+                wc_notify --data-binary '{\"status\": \"FAILURE\"}'
+            fi"
 fi
-echo "                       '"
 
 echo "
             echo '******************************************'
@@ -423,23 +427,21 @@ fi
     properties:
       handle: {get_resource: rp_wait_handle}
       count: $RP_WAIT_COUNT
-      timeout: 600 # Suppose that services runs in less than 10 minutes
+      timeout: 1200 # Suppose that services runs in less than 20 minutes
 "
     else
         echo ""
     fi
 
-    
     OUTPUTS="$OUTPUTS
   # $1 server internal network IP address
   $1_instance_internal_ip:
     description: Fixed ip assigned to the server on private network
     value: { get_attr: [$1_instance, networks, net0, 0] }"
-    
+
     shift
 done
 
 if [ -n "$OUTPUTS" ]; then
-    echo ""
     echo "outputs:$OUTPUTS"
 fi
