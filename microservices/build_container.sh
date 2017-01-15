@@ -122,7 +122,18 @@ if [ "$DOCKER_OK" == "ok" ]; then
           -e OS_PASSWORD="$OS_PASSWORD" \
           -e OS_AUTH_URL="$OS_AUTH_URL" \
           -p $PORT:$PORT "$MICROSERVICE-service" &
+          
+        if [ $? != 0 ]; then
+            # Remain there had been an error !
+            DOCKER_OK="nok"
+        fi
     fi
 fi
 
 echo "Process ended"
+
+if [ "$DOCKER_OK" != "ok" ]; then
+    exit 4
+else
+    exit 0
+fi

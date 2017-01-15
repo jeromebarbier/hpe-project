@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 # This script try to retrieve an IP address based on the microservice
 # name
