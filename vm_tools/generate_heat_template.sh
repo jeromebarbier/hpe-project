@@ -250,6 +250,58 @@ echo "  # Description of network capabilities
 # Generate the first subnetwork
 generate_subnet
 
+# Generates the global initialization scripts
+## Global variables containing the pathes
+VMU="ubuntu"
+VMU_HOME="/home/$VMU/"
+VMU_HPE_PROJECT="${VMU_HOME}hpe-project/"
+VMU_PROJECT_CONF_FILE_NAME="dynamite"
+VMU_PROJECT_CONF_FILE="$VMU_HOME.$VMU_PROJECT_CONF_FILE_NAME"
+
+echo "  # Global services initialization (beginning)
+  global_init_beginning:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      config: |
+        echo '***************************************'
+        echo '* Start to prepare the VM for service *'
+        echo '***************************************'
+"
+echo "  # Global services initialization (ending, after MICSERV is set by service-specific initalizator)
+  global_init_ending:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      config: |
+        echo '** Add some environment variables required to access the Openstack setup **'
+        echo 'export OS_AUTH_URL="$OS_AUTH_URL"' >> $VMU_PROJECT_CONF_FILE
+        echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> $VMU_PROJECT_CONF_FILE
+        echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> $VMU_PROJECT_CONF_FILE
+        echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> $VMU_PROJECT_CONF_FILE
+
+        echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
+
+        echo '** Authorize user to log via its SSH Key **'
+        echo '$SSH_KEY' >> $VMU_HOME.ssh/authorized_keys
+
+        echo '** Setting up Docker and Swiftclient lib **'
+        apt-get -y install docker.io git python-swiftclient
+
+        echo '** Get service code from GIT repository **'
+        mkdir $VMU_HPE_PROJECT
+        git clone https://github.com/jeromebarbier/hpe-project.git $VMU_HPE_PROJECT
+
+        echo '** Start service deployement **'
+        chmod +x ${VMU_HPE_PROJECT}microservices/build_container.sh
+        /bin/bash -c 'source $VMU_PROJECT_CONF_FILE; cd ${VMU_HPE_PROJECT}microservices; ./build_container.sh \$MICSERV'
+        echo '** Service deployement script execution ending in background **'
+
+        echo '** Send rp signal **'
+
+        echo '*****************************************************'
+        echo '* Finished to prepare the VM for service, have fun! *'
+        echo '*****************************************************'
+"
+
 # Generate RP dependancies
 RP_DEPENDS_ON=""
 for SERV in "$@"
@@ -295,57 +347,58 @@ do
   # The floating IP address for service $1
   $1_instance_floating_ip:
     description: The floating IP address of the deployed $1 instance
-    value: { get_attr: [$1_floating_ip, floating_ip_address] }"
+    value: { get_attr: [$1_floating_ip, floating_ip_address] }
+"
   fi
 
-    VMU="ubuntu"
-    VMU_HOME="/home/$VMU/"
-    VMU_HPE_PROJECT="${VMU_HOME}hpe-project/"
-    VMU_PROJECT_CONF_FILE_NAME="dynamite"
-    VMU_PROJECT_CONF_FILE="$VMU_HOME.$VMU_PROJECT_CONF_FILE_NAME"
-
-    echo "  ## Its software config
-  $1_init:
+    echo "  ## Its (specific) software config
+  $1_specific_init:
     type: OS::Heat::SoftwareConfig
     properties:
-      group: ungrouped
       config: |
         #!/bin/sh
-        echo '***************************************'
-        echo '* Start to prepare the VM for service *'
-        echo '***************************************'
-        
         echo '** Initialize MICSERV environment variable to value $1 **'
         echo 'export MICSERV=\"$1\"' >> $VMU_PROJECT_CONF_FILE
-        
-        echo '** Add some environment variables required to access the Openstack setup **'
-        echo 'export OS_AUTH_URL="$OS_AUTH_URL"' >> $VMU_PROJECT_CONF_FILE
-        echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> $VMU_PROJECT_CONF_FILE
-        echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> $VMU_PROJECT_CONF_FILE
-        echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> $VMU_PROJECT_CONF_FILE
-
-        echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
-
-        echo '** Authorize user to log via its SSH Key **'
-        echo '$SSH_KEY' >> $VMU_HOME.ssh/authorized_keys
-
-        echo '** Setting up Docker and Swiftclient lib **'
-        apt-get -y install docker.io git python-swiftclient
-
-        echo '** Get service code from GIT repository **'
-        mkdir $VMU_HPE_PROJECT
-        git clone https://github.com/jeromebarbier/hpe-project.git $VMU_HPE_PROJECT
-
-        echo '** Start service deployement **'
-        chmod +x ${VMU_HPE_PROJECT}microservices/build_container.sh
-        /bin/bash -c 'source $VMU_PROJECT_CONF_FILE; echo Source result=\$?; cd ${VMU_HPE_PROJECT}microservices; echo \$(env); ./build_container.sh \$MICSERV'
-        echo '** Service deployement script executed **'
-
-        echo '*****************************************************'
-        echo '* Finished to prepare the VM for service, have fun! *'
-        echo '*****************************************************'
 "
-  
+
+# echo "  ## Merge global initializators and specific initialization
+#  $1_server_init:
+#    type: OS::Heat::MultipartMime
+#    properties:
+#      parts:
+#      - config: { get_resource: global_init_beginning }
+#      - config: { get_resource: $1_specific_init }
+#      - config: { get_resource: global_init_ending }
+#"
+
+echo "  ## Global deployement script (first part) on $b1
+  $1_first_script_deployment:
+    type: OS::Heat::SoftwareDeployment
+    properties:
+      name: 10_$1_first_script
+      config: { get_resource: global_init_beginning }
+      server: { get_resource: $1_instance }
+      signal_transport: HEAT_SIGNAL
+
+  ## $1 specific deployement script
+  $1_second_script_deployment:
+    type: OS::Heat::SoftwareDeployment
+    properties:
+      name: 20_$1_second_script
+      config: { get_resource: $1_specific_init }
+      server: { get_resource: $1_instance }
+      signal_transport: HEAT_SIGNAL
+
+  ## Global deployement script (second part) on $1
+  $1_third_script_deployment:
+    type: OS::Heat::SoftwareDeployment
+    properties:
+      name: 30_$1_third_script
+      config: { get_resource: global_init_ending }
+      server: { get_resource: $1_instance }
+      signal_transport: HEAT_SIGNAL
+"
+
     echo "  ## Its VM
   $1_instance:
     type: OS::Nova::Server
@@ -354,9 +407,8 @@ do
       flavor: m1.small
       networks:
         - port: { get_resource: $1_instance_port }
-      user_data:
-        get_resource: $1_init
       user_data_format: SOFTWARE_CONFIG
+      software_config_transport: POLL_SERVER_HEAT
     description: This instance describes how to deploy the $1 microservice"
 
     if [ "$1" == "rp" ]; then
