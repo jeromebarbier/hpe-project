@@ -12,7 +12,7 @@
 DATE=$(date)
 HOST=$(hostname)
 OUT_FILE=/etc/apache2/sites-available/reverse-list.conf
-if [ -z "$1" ]; then
+if [ -n "$1" ]; then
     echo "/!\ Running in debug mode!"
     OUT_FILE="$1"
 fi
@@ -27,20 +27,20 @@ echo "# Configuration generated on $DATE using $HOST
     ProxyRequests Off
 " >> $OUT_FILE
 
-OUTPUT=$(heat stack-list $OS_STACKNAME)
+OUTPUT=$(heat stack-list $OS_STACKNAME 2> /dev/null)
 SERVICE=""
 IP=""
 while read LINE;
 do
-    if [ grep "_instance_internal_ip" "$LINE" ]; then
+    if [ $(echo "$LINE" | grep "_instance_internal_ip") ]; then
         SERVICE=$(echo "$LINE" | grep -Po '[a-z]+_instance' | sed 's/_instance//')
     fi
     
-    if [ grep "output_value" "$LINE" ]; then
-        IP=$()
+    if [ $(echo "$LINE" | grep "output_value") ]; then
+        IP=$(echo "$LINE" | grep -Po "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
     fi
     
-    if [ grep '{' "$LINE" ]; then
+    if [ $(echo "$LINE" | grep '{') ]; then
         SERVICE=""
         IP=""
     fi
@@ -49,12 +49,12 @@ do
         echo "    # Redirection for service $SERVICE" >> $OUT_FILE
         echo "    ProxyPass /$SERVICE http://$IP:8090/" >> $OUT_FILE
         echo "    ProxyPassReverse /$SERVICE http://$IP:8090/" >> $OUT_FILE
-        echo "" >> $OUTPUT
+        echo "" >> $OUT_FILE
         
         SERVICE=""
         IP=""
     fi
-done
+done <<< "$OUTPUT"
 
 echo "    <Proxy>
         Order Allow,Deny
