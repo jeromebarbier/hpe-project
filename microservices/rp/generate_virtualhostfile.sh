@@ -11,6 +11,11 @@
 
 DATE=$(date)
 HOST=$(hostname)
+OUT_FILE=/etc/apache2/sites-available/reverse-list.conf
+if [ -z "$1" ]; then
+    echo "/!\ Running in debug mode!"
+    OUT_FILE="$1"
+fi
 
 if [ ! -h lwswift ] && [ ! -d lwswift ]; then
     ln -s ../lwswift lwswift
@@ -20,25 +25,34 @@ echo "# Configuration generated on $DATE using $HOST
 <VirtualHost *:*>
     ProxyPreserveHost On
     ProxyRequests Off
-"
+" >> $OUT_FILE
 
-for POTENTIAL_PS in ../*
+OUTPUT=$(heat stack-list $OS_STACKNAME)
+SERVICE=""
+IP=""
+while read LINE;
 do
-    if [ -d "$POTENTIAL_PS" ]; then
-        POTENTIAL_PS=$(echo "$POTENTIAL_PS" | sed 's/\.\.\///')
-
-        if [ ${#POTENTIAL_PS} == 1 ]; then
-            # This is a valid microservice
-            MICROSERVICE_NAME="$POTENTIAL_PS"
-            MICROSERVICE_IP=$(./retrieve_ip.sh "$MICROSERVICE_NAME" 2> /dev/null)
-            
-            if [ -n "$MICROSERVICE_IP" ]; then
-                echo "    # Redirection for service $MICROSERVICE_NAME"
-                echo "    ProxyPass /$MICROSERVICE_NAME http://$MICROSERVICE_IP:8090/"
-                echo "    ProxyPassReverse /$MICROSERVICE_NAME http://$MICROSERVICE_IP:8090/"
-                echo ""
-            fi
-        fi 
+    if [ grep "_instance_internal_ip" "$LINE" ]; then
+        SERVICE=$(echo "$LINE" | grep -Po '[a-z]+_instance' | sed 's/_instance//')
+    fi
+    
+    if [ grep "output_value" "$LINE" ]; then
+        IP=$()
+    fi
+    
+    if [ grep '{' "$LINE" ]; then
+        SERVICE=""
+        IP=""
+    fi
+    
+    if [ -n "$IP" ] && [ -n "$SERVICE" ]; then
+        echo "    # Redirection for service $SERVICE" >> $OUT_FILE
+        echo "    ProxyPass /$SERVICE http://$IP:8090/" >> $OUT_FILE
+        echo "    ProxyPassReverse /$SERVICE http://$IP:8090/" >> $OUT_FILE
+        echo "" >> $OUTPUT
+        
+        SERVICE=""
+        IP=""
     fi
 done
 
@@ -48,4 +62,4 @@ echo "    <Proxy>
     </Proxy>
 
     ServerName localhost
-</VirtualHost>"
+</VirtualHost>" >> $OUT_FILE

@@ -324,17 +324,9 @@ do
     properties:
       group: ungrouped"
 
-    if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
-        # If generating RP, then use the handy function "wc_notify" for instances other
-        # than RP
-        echo "      config:
+    echo "      config:
         str_replace:
           template: |"
-    else
-        # And if not generating RP or generating the service RP, then
-        # generate a basic script
-        echo "      config: |"
-    fi
 
     echo "            #!/bin/sh
             echo '***************************************'
@@ -349,6 +341,7 @@ do
             echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> $VMU_PROJECT_CONF_FILE
             echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> $VMU_PROJECT_CONF_FILE
             echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> $VMU_PROJECT_CONF_FILE
+            echo 'export OS_STACKNAME'=\"THE_STACK_NAME\" >> $VMU_PROJECT_CONF_FILE
 
             echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
 
@@ -356,7 +349,7 @@ do
             echo '$SSH_KEY' >> $VMU_HOME.ssh/authorized_keys
 
             echo '** Setting up Docker and Swiftclient lib **'
-            apt-get -y install docker.io git python-swiftclient
+            apt-get -y install docker.io git
 
             echo '** Get service code from GIT repository **'
             mkdir $VMU_HPE_PROJECT
@@ -373,8 +366,8 @@ do
                           echo \"** Service deployement script executed, DEPLOYEMENT_STATE=\$DEPLOYEMENT_STATE (should be 0 to be ok) **\"
                           # Propagate result
                           exit \$DEPLOYEMENT_STATE'"
-if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
-    echo "
+    if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
+        echo "
             # Receive result from subprocess
             DEPLOYEMENT_STATE=\$?
             echo \"** Send a signal to rp (DEPLOYEMENT_STATE=\$DEPLOYEMENT_STATE) **\"
@@ -385,19 +378,22 @@ if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
                 echo \"** Deployement failed, send a notification of failure to HEAT\"
                 wc_notify --data-binary '{\"status\": \"FAILURE\"}'
             fi"
-fi
+    fi
 
-echo "
+    echo "
             echo '******************************************'
             echo '* Finished to prepare the VM for service *'
             echo '******************************************'"
 
-if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
-    # Add the ressource "wc_notify" to be able to notify RP
     echo "          params:
-            # Notification builder for RP
+            THE_STACK_NAME: { get_param: 'OS::stack_id' }
+"
+
+    if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
+        # Add the ressource "wc_notify" to be able to notify RP
+        echo "            # Notification builder for RP
             wc_notify: { get_attr: [rp_wait_handle, curl_cli] }"
-fi
+    fi
 
     echo "
   ## Its VM
@@ -437,7 +433,7 @@ fi
   # $1 server internal network IP address
   $1_instance_internal_ip:
     description: Fixed ip assigned to the server on private network
-    value: { get_attr: [$1_instance, networks, net0, 0] }"
+    value: { get_attr: [ $1_instance, first_address ] }"
 
     shift
 done
