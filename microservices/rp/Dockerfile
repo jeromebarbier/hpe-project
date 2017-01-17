@@ -2,10 +2,9 @@ FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get -y update
-RUN apt-get install -y python-heatclient
+RUN apt-get install -y python-heatclient apache2
 
 # Setup a valid Apache config
-RUN apt-get -y install apache2
 RUN a2enmod proxy
 RUN a2enmod proxy_http
 RUN a2enmod rewrite
@@ -20,10 +19,9 @@ RUN mkdir /wd
 COPY generate_virtualhostfile.sh /wd
 RUN a2ensite reverse-list
 
-# Re-run all
+# Expose Apache's port
 EXPOSE 80
-RUN service apache2 restart
 
 WORKDIR /wd
 
-CMD ["bash", "-c", "./generate_virtualhostfile.sh; while true; do spleep(1000); done"]
+CMD ["bash", "-c", "./generate_virtualhostfile.sh; a2ensite reverse-list; service apache2 restart; while true; do spleep(1000); done"]
