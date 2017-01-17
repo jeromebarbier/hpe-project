@@ -130,7 +130,7 @@ class lwswift:
             if serv_ip == None:
                 return None
             
-            return  + serv_ip + ":8090"
+            return serv_ip + ":8090"
         else:
             raise Exception("lwsift.get_service: Micro-service " + name + " is not a valid service")
     
