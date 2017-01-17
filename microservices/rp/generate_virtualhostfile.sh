@@ -62,6 +62,11 @@ do
     fi
 done <<< "$OUTPUT"
 
+# Manage local website
+echo "    # Redirection for service homepage" >> $OUT_FILE
+echo "    ProxyPass / http://localhost:8090" >> $OUT_FILE
+echo "    ProxyPassReverse / http://localhost:8090" >> $OUT_FILE
+
 echo "    <Proxy>
         Order Allow,Deny
         Allow from all

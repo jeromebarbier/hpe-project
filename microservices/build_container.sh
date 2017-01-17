@@ -107,8 +107,7 @@ if [ "$DOCKER_OK" == "ok" ]; then
     
     else
 
-        ## Run Docker newly built image and bind it to port 8090
-        ## ... unless this is RP because RP needs to be binded on port 80
+        ## Run Docker newly built image and bind it to port 80 (in order to make RP host compatible with it)
         CONVENTIONNAL_PORT=80
         if [ "$MICROSERVICE" == "rp" ]; then
             CONVENTIONNAL_PORT=8090 # Make RP NOT public
