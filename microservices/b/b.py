@@ -46,8 +46,8 @@ def button(uid):
         # The associated JS API
         "js": """
         function play() {
-            jQuery.getJSON("/click/""" + uid + """", {}, function(r) {
-                disableButton();
+            jQuery.getJSON("/b/click/""" + uid + """", {}, function(r) {
+                jQuery("#elButton").disable();
                 if(r.ok != undefined) {
                     if(r.ok) {
                         if(jQuery("#elButton").played != undefined) {
