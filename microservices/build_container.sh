@@ -120,6 +120,7 @@ if [ "$DOCKER_OK" == "ok" ]; then
           -e OS_PASSWORD="$OS_PASSWORD" \
           -e OS_AUTH_URL="$OS_AUTH_URL" \
           -e OS_STACKNAME="$OS_STACKNAME" \
+          -e OS_RP_IP="$OS_RP_IP" \ # May not be defined, it's not a problem and it depends on the deployed stack
           -p $CONVENTIONNAL_PORT:$PORT "$MICROSERVICE-service"
           
         if [ $? != 0 ]; then

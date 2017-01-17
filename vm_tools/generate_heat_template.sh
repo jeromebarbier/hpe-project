@@ -12,12 +12,19 @@ if [ "$1" == "help" ]; then
     echo "   - -y: Don't ask for input (use default values for the template)"
     echo "   - -nfip: Generate the script without the floating IP allocation"
     echo "   - -ps <name>: Name of the public server (which will get a floatting IP)"
+    echo "   - -sf: Safe mode, only if RP is included, force it to wait for all "
+    echo "          services to have succeeded to deploy before being deployed"
+    echo "   - -gb <NAME>: Force the deployed servers to focus on one single GIT"
+    echo "                 branch (master by default)"
+    echo ""
     echo "Services:"
     echo "   - Enumerate the services you want to include in the template"
+    echo ""
     echo "-nsn:"
     echo "   Inside the enumeration of instances, tells to put the following"
     echo "   microservices into a new subnetwork"
     echo "Notice: You must source your openRC file to use this generator"
+    echo ""
     echo "Examples:"
     echo "   - Generate a template with default values for services b, w and i:"
     echo "      $0 -y -s b w i"
@@ -179,6 +186,8 @@ ASSUME_YES="no"
 SILENT="no"
 FLOATING_IP="yes"
 PUBLIC_SERVER=""
+RP_SAFE="no"
+GIT_BRANCH="master"
 while true ;
 do
     if [ "$1" == "-y" ]; then
@@ -190,6 +199,11 @@ do
     elif [ "$1" == "-ps" ]; then
         PUBLIC_SERVER="$2"
         shift
+    elif [ "$1" == "-gb" ]; then
+        GIT_BRANCH="$2"
+        shift
+    elif [ "$1" == "-sf" ]; then
+        RP_SAFE="yes"
     else
         break
     fi
@@ -263,12 +277,20 @@ echo "  # Description of network capabilities
 generate_subnet
 
 # Generate RP dependancies
-RP_WAIT_COUNT=0
+RP_WAIT_COUNT=0 # Safe mode
+RP_WAIT_CONDS="" # Non-safe mode
 BUILDING_WITH_RP="no"
 for SERV in "$@"
 do
     if [ "$SERV" != "rp" ] && [ "$SERV" != "-npn" ]; then
+        # Safe mode
         RP_WAIT_COUNT=$((RP_WAIT_COUNT + 1))
+        
+        # Non-safe mode
+        if [ ${#RP_WAIT_CONDS} != 0 ]; then
+            RP_WAIT_CONDS="$RP_WAIT_CONDS,"
+        fi
+        RP_WAIT_CONDS="$RP_WAIT_CONDS ${SERV}_instance"
     fi
     
     if [ "$SERV" == "rp" ]; then
@@ -284,6 +306,11 @@ do
         generate_subnet
         shift
         continue
+    fi
+
+    if [ "$1" == "b" ] && [ "$BUILDING_WITH_RP" == "no" ]; then
+        # B uses RP to contact W so emits a warning if B is built without RP
+        echo "WARNING: Building B without RP" >&2
     fi
 
     echo "  # Description of microservice $1
@@ -341,9 +368,15 @@ do
             echo 'export OS_TENANT_NAME=\"$OS_TENANT_NAME\"' >> $VMU_PROJECT_CONF_FILE
             echo 'export OS_USERNAME=\"$OS_USERNAME\"' >> $VMU_PROJECT_CONF_FILE
             echo 'export OS_PASSWORD=\"$OS_PASSWORD\"' >> $VMU_PROJECT_CONF_FILE
-            echo 'export OS_STACKNAME'=\"THE_STACK_NAME\" >> $VMU_PROJECT_CONF_FILE
+            echo 'export OS_STACKNAME=\"THE_STACK_NAME\"' >> $VMU_PROJECT_CONF_FILE"
 
-            echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
+    if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
+        # If RP is buit, then other services MUST know its IP address
+        # to be able to contact others services
+        echo "            echo 'export OS_RP_IP=\"THE_RP_SERV_IP\"' >> $VMU_PROJECT_CONF_FILE"
+    fi
+
+    echo "            echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
 
             echo '** Authorize user to log via its SSH Key **'
             echo '$SSH_KEY' >> $VMU_HOME.ssh/authorized_keys
@@ -353,7 +386,7 @@ do
 
             echo '** Get service code from GIT repository **'
             mkdir $VMU_HPE_PROJECT
-            git clone https://github.com/jeromebarbier/hpe-project.git $VMU_HPE_PROJECT
+            git clone -b $GIT_BRANCH --single-branch https://github.com/jeromebarbier/hpe-project.git $VMU_HPE_PROJECT
 
             echo '** Start service deployement **'
             chmod +x ${VMU_HPE_PROJECT}microservices/build_container.sh
@@ -366,7 +399,9 @@ do
                           echo \"** Service deployement script executed, DEPLOYEMENT_STATE=\$DEPLOYEMENT_STATE (should be 0 to be ok) **\"
                           # Propagate result
                           exit \$DEPLOYEMENT_STATE'"
-    if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
+
+    if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ] && [ "$RP_SAFE" == "yes" ]; then
+        # Add RP notifiers (safe mode: build only when services are successfully deployed)
         echo "
             # Receive result from subprocess
             DEPLOYEMENT_STATE=\$?
@@ -386,13 +421,19 @@ do
             echo '******************************************'"
 
     echo "          params:
-            THE_STACK_NAME: { get_param: 'OS::stack_id' }
-"
+            # Get whole stack name
+            THE_STACK_NAME: { get_param: 'OS::stack_id' }"
 
     if [ "$BUILDING_WITH_RP" == "yes" ] && [ "$1" != "rp" ]; then
-        # Add the ressource "wc_notify" to be able to notify RP
-        echo "            # Notification builder for RP
+        if [ "$RP_SAFE" == "yes" ]; then
+            # Add the ressource "wc_notify" to be able to notify RP
+            echo "            # Notification builder for RP
             wc_notify: { get_attr: [rp_wait_handle, curl_cli] }"
+        fi
+
+        echo "            # Give RP's address to other services
+            THE_RP_SERV_IP: { get_attr: [ rp_instance, first_address ] }"
+
     fi
 
     echo "
@@ -410,11 +451,12 @@ do
     description: This instance describes how to deploy the $1 microservice"
 
     if [ "$1" == "rp" ]; then
-        # Wait conditions to ensure that all services are registered and ready
-        echo "    depends_on: rp_wait_condition
+        if [ "$RP_SAFE" == "yes" ]; then
+            # Safe mode: Wait conditions to ensure that all services are registered and ready
+            echo "    depends_on: rp_wait_condition
 "
-        
-        echo "  ## Its wait condition (RP waits for all services to be deployed before being able to be itself deployed)
+
+            echo "  ## Its wait condition (RP waits for all services to be deployed before being able to be itself deployed)
   rp_wait_handle:
     type: OS::Heat::WaitConditionHandle
 
@@ -425,8 +467,12 @@ do
       count: $RP_WAIT_COUNT
       timeout: 1200 # Suppose that services runs in less than 20 minutes
 "
-    else
-        echo ""
+        else
+            # Pseudo-safe mode: RP is waiting for the stack to be in "CREATED" state only
+            echo "    depends_on: [ $RP_WAIT_CONDS ]
+"
+            
+        fi
     fi
 
     OUTPUTS="$OUTPUTS
