@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:14.04
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get -y update
@@ -17,11 +17,11 @@ RUN mkdir /wd
 
 # Set a new default website... to reverse proxy
 COPY generate_virtualhostfile.sh /wd
-RUN a2ensite reverse-list
+RUN chmod +x /wd/generate_virtualhostfile.sh
 
 # Expose Apache's port
 EXPOSE 80
 
 WORKDIR /wd
 
-CMD ["bash", "-c", "./generate_virtualhostfile.sh; a2ensite reverse-list; service apache2 restart; while true; do spleep(1000); done"]
+CMD ["bash", "-c", "./generate_virtualhostfile.sh; a2ensite reverse-list; service apache2 restart; while true; do sleep 1; done"]
