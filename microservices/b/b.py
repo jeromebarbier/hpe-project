@@ -47,7 +47,7 @@ def button(uid):
         "js": """
         function play() {
             jQuery.getJSON("/b/click/""" + uid + """", {}, function(r) {
-                disableButton();
+                jQuery("#elButton").disable();
                 if(r.ok != undefined) {
                     if(r.ok) {
                         if(jQuery("#elButton").played != undefined) {
