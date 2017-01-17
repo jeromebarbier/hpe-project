@@ -39,6 +39,12 @@ config.logger = app.logger
 def button(uid):
     config.logger.info("Creating button...")
 
+    lwsc = lwswift() # We will have to contact SWIFT
+    
+    # Well, ask W to define a gift for the user
+    # Retrieve W service's IP address
+    b_ip = lwsc.get_service("b")
+
     data = {
         # The button element
         "html": "<button id=\"elButton\">Jouer !</button>",
@@ -46,7 +52,7 @@ def button(uid):
         # The associated JS API
         "js": """
         function play() {
-            jQuery.getJSON("/click/""" + uid + """", {}, function(r) {
+            jQuery.getJSON(http://""" + b_ip + """/click/""" + uid + """", {}, function(r) {
                 disableButton();
                 if(r.ok != undefined) {
                     if(r.ok) {
