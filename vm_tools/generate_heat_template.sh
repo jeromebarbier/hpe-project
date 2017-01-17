@@ -256,6 +256,10 @@ echo "  #Description of the security group
           remote_ip_prefix: 0.0.0.0/0
           port_range_min: 22
           port_range_max: 22
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 8090
+          port_range_max: 8090
 "
 
 # Generates the network description

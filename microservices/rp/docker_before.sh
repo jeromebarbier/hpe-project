@@ -9,7 +9,7 @@ a2enmod rewrite
 a2dissite 000-default
 
 # Generate the site configuration
-chmod +x /wd/generate_virtualhostfile.sh
+chmod +x generate_virtualhostfile.sh
 ./generate_virtualhostfile.sh
 a2ensite reverse-list
 
