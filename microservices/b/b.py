@@ -105,7 +105,7 @@ def click(uid):
         add_headers(resp)
         return resp
     
-    w_answer = requests.get("http://" + w_ip + ":8090/play/" + uid)
+    w_answer = requests.get("http://" + w_ip + "/play/" + uid)
     
     # If W had not answered as expected
     if w_answer.status_code != 200:

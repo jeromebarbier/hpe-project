@@ -124,8 +124,13 @@ class lwswift:
         """
         if name in ["b", "i", "p", "w", "s", "rp"]:
             if os.getenv("OS_RP_IP") != None:
-                return os.getenv("OS_RP_IP") + "/" + + name
-            return self.get_object(lwswift.container_services_directory, name)
+                return os.getenv("OS_RP_IP") + "/" + name
+            
+            serv_ip = self.get_object(lwswift.container_services_directory, name)
+            if serv_ip == None:
+                return None
+            
+            return  + serv_ip + ":8090"
         else:
             raise Exception("lwsift.get_service: Micro-service " + name + " is not a valid service")
     
