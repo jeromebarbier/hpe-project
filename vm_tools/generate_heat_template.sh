@@ -432,7 +432,7 @@ do
         fi
 
         echo "            # Give RP's address to other services
-            THE_RP_SERV_IP: { get_attr: [ rp_instance, first_address ] }"
+            THE_RP_SERV_IP: { get_attr: [ rp_instance_port, fixed_ips, 0, ip_address ] }"
 
     fi
 

@@ -113,12 +113,18 @@ class lwswift:
     
     def get_service(self, name):
         """
-        Try to retrieve a micro-service's IP address using SWIFT
+        Try to retrieve a micro-service's contacting way:
+          - First, it checks if the service RP is available and if so, build the
+            path to use RP
+          - If RP is not available (for debugging for example), then it tries to
+            retrieve the URL from SWIFT
         :param name: The microservice's name (in ["b", "i", "p", "w", "s"])
         :raise Exception: When the requested Microservice name is not valid
         :return: The requested IP address or None if there is no such service registered
         """
-        if name in ["b", "i", "p", "w", "s"]:
+        if name in ["b", "i", "p", "w", "s", "rp"]:
+            if os.getenv("OS_RP_IP") != None:
+                return os.getenv("OS_RP_IP") + "/" + + name
             return self.get_object(lwswift.container_services_directory, name)
         else:
             raise Exception("lwsift.get_service: Micro-service " + name + " is not a valid service")
