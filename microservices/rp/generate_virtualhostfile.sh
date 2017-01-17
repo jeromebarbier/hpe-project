@@ -21,31 +21,37 @@ if [ ! -h lwswift ] && [ ! -d lwswift ]; then
     ln -s ../lwswift lwswift
 fi
 
+echo "Generating virtual hostfile into $OUT_FILE, debug information printed below:"
+
 echo "# Configuration generated on $DATE using $HOST
 <VirtualHost *:*>
     ProxyPreserveHost On
     ProxyRequests Off
 " >> $OUT_FILE
 
-OUTPUT=$(heat stack-list $OS_STACKNAME 2> /dev/null)
+OUTPUT=$(heat stack-show $OS_STACKNAME 2> /dev/null)
+echo "$OUTPUT"
 SERVICE=""
 IP=""
 while read LINE;
 do
-    if [ $(echo "$LINE" | grep "_instance_internal_ip") ]; then
+    echo "$LINE" | grep "_instance_internal_ip"
+    if [ $? -eq 0 ]; then
         SERVICE=$(echo "$LINE" | grep -Po '[a-z]+_instance' | sed 's/_instance//')
     fi
     
-    if [ $(echo "$LINE" | grep "output_value") ]; then
+    echo "$LINE" | grep "output_value"
+    if [ $? -eq 0 ]; then
         IP=$(echo "$LINE" | grep -Po "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+")
     fi
     
-    if [ $(echo "$LINE" | grep '{') ]; then
+    echo "$LINE" | grep '{' > /dev/null
+    if [ $? -eq 0 ]; then
         SERVICE=""
         IP=""
     fi
     
-    if [ -n "$IP" ] && [ -n "$SERVICE" ]; then
+    if [ -n "$IP" ] && [ -n "$SERVICE" ] && [ "$SERVICE" != "rp" ]; then
         echo "    # Redirection for service $SERVICE" >> $OUT_FILE
         echo "    ProxyPass /$SERVICE http://$IP:8090/" >> $OUT_FILE
         echo "    ProxyPassReverse /$SERVICE http://$IP:8090/" >> $OUT_FILE
@@ -63,3 +69,6 @@ echo "    <Proxy>
 
     ServerName localhost
 </VirtualHost>" >> $OUT_FILE
+
+echo "Finished to generate virtual hostfile, file content:"
+cat $OUT_FILE

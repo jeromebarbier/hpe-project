@@ -6,7 +6,6 @@
 . docker_scripts_constants.sh
 
 echo "Updating execution rights for generating scripts"
-chmod +x retrieve_ip.sh
 chmod +x generate_virtualhostfile.sh
 
 echo "Generate the hostfile"

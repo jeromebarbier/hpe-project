@@ -95,27 +95,20 @@ echo "  > Removing libs"
 rm -rf "$MICROSERVICE/lwswift"
 
 if [ "$DOCKER_OK" == "ok" ]; then
-    # Notify IP address to SWIFT
-    if [ "$MICROSERVICE" != "rp" ]; then
-    
-        echo "Send IP notification to SWIFT"
-        IP=$(/sbin/ifconfig ens3 | grep 'inet ' | cut -d' ' -f12 | sed 's/addr://')
-        chmod +x notify_ip.sh
-        ./notify_ip.sh "$MICROSERVICE" "$IP"
-    
-    else
-        # Reverse proxy do not have to be registered !
-        echo "Microservice is rp... don't notify SWIFT for its IP address"
-    fi
-    
     # Run service
     ## Try to detect proper port
     PORT=$(cat "$MICROSERVICE/$MICROSERVICE.conf" 2> /dev/null | grep "port" | sed 's/port.*=[^0-9]*//')
     echo "Service $MICROSERVICE port is $PORT"
+    
     if [ -z "$PORT" ]; then
+    
         echo "... Invalid port, don't start Docker instance"
+        DOCKER_OK="nok"
+    
     else
 
+        ## Run Docker newly built image and bind it to port 8090
+        ## ... unless this is RP because RP needs to be binded on port 80
         CONVENTIONNAL_PORT=8090
         if [ "$MICROSERVICE" == "rp" ]; then
             CONVENTIONNAL_PORT=80 # Make RP public !
@@ -126,6 +119,7 @@ if [ "$DOCKER_OK" == "ok" ]; then
           -e OS_USERNAME="$OS_USERNAME" \
           -e OS_PASSWORD="$OS_PASSWORD" \
           -e OS_AUTH_URL="$OS_AUTH_URL" \
+          -e OS_STACKNAME="$OS_STACKNAME" \
           -p $CONVENTIONNAL_PORT:$PORT "$MICROSERVICE-service"
           
         if [ $? != 0 ]; then
