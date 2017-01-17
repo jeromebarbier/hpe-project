@@ -1,0 +1,56 @@
+<html>
+<head>
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.1.1.min.js"></script>
+<title> WELCOME TO THE LOTTERY!!!!!!!!!</title>
+</head>
+<body>
+<script>
+var uid = window.location.hash.substr(1);
+jQuery(function() {
+
+/*var service_i = $.ajax("i/play/"+uid)
+  .always(function(data) {
+    console.log(data)
+  });*/
+
+
+var service_b = $.ajax("/b/button/"+uid)
+  .always(function(data) {
+    console.log(data);
+    jQuery("body").append(data.html);
+    eval(data.js);
+    jQuery("#elButton").disable();
+    jQuery("#elButton").playedTrigger(played);
+  });
+
+var service_s = $.ajax("/s/checkPlayed/"+uid)
+  .always(function(data) {
+	jQuery("body").append("<div id='status'>"+data.html+"</div>");
+	if (!(data.played)) jQuery("#elButton").enable();
+});
+
+var service_p = $.ajax("/p/"+uid)
+  .always(function(data) {
+	if(data.img) $("body").append("<img src='data:image/png;base64,"+data.img+"'>");
+	else console.log("No img");
+  });
+
+
+function played() {
+    var service_s = $.ajax("/s/checkPlayed/"+uid)
+         .always(function(data) {
+	    jQuery("#status").html(data.html);
+	});
+    var service_p = $.ajax("/p/"+uid)
+    .always(function(data) {
+	if(data.img) $("body").append("<img src='data:image/png;base64,"+data.img+"'>");
+    });
+}
+});
+</script>
+<h1>LET'S GET READY TO RUMBLEEEEEEEEEEEEEEEEE</h1>
+<div id="play"></div>
+<div id="picture"></div>
+</body>
+</html>
+
