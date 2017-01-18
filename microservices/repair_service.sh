@@ -51,4 +51,4 @@ else
 fi
 
 echo "Restart build and running procedure"
-./build_container.sh "$MICSERV"
+./deploy_service.sh "$MICSERV"
