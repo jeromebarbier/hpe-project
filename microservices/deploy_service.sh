@@ -81,7 +81,7 @@ if [ -f ./Dockerfile ] && [ "$ALL_WAS_GOOD" == "yes" ]; then
     if [ "$ALL_WAS_GOOD" == "yes" ]; then
         # Run service
         ## Try to detect internal service port (to bind it to host computer 80)
-        PORT=$(cat "$MICROSERVICE/$MICROSERVICE.conf" 2> /dev/null | grep "port" | sed 's/port.*=[^0-9]*//')
+        PORT=$(cat "$MICROSERVICE.conf" 2> /dev/null | grep "port" | sed 's/port.*=[^0-9]*//')
 
         echo "  > Service $MICROSERVICE port is $PORT"
 
