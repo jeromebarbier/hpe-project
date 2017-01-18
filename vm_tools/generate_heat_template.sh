@@ -393,12 +393,12 @@ do
             git clone -b $GIT_BRANCH --single-branch https://github.com/jeromebarbier/hpe-project.git $VMU_HPE_PROJECT
 
             echo '** Start service deployement **'
-            chmod +x ${VMU_HPE_PROJECT}microservices/build_container.sh
+            chmod +x ${VMU_HPE_PROJECT}microservices/deploy_service.sh
 
             # Directly use bash to be able to handle an environment
             /bin/bash -c 'source $VMU_PROJECT_CONF_FILE
                           cd ${VMU_HPE_PROJECT}microservices
-                          ./build_container.sh \$MICSERV
+                          ./deploy_service.sh \$MICSERV
                           DEPLOYEMENT_STATE=\$?
                           echo \"** Service deployement script executed, DEPLOYEMENT_STATE=\$DEPLOYEMENT_STATE (should be 0 to be ok) **\"
                           # Propagate result
