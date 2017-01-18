@@ -29,6 +29,11 @@ if [ -z "$MICSERV" ]; then
     exit 1
 fi
 
+if [ ! -f "$MICSERV/Dockerfile" ]; then
+    echo "Cannot repair services that are not based on Docker"
+    exit 1
+fi
+
 # Do the job
 INSTANCE=$(docker ps | grep "$MICSERV-service" | cut -d' ' -f1)
 if [ -n "$INSTANCE" ]; then
