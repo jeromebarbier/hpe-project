@@ -47,44 +47,73 @@ fi
 # From now, only play with the service's folder
 cd $MICROSERVICE
 
-# Run before code
-if [ -f ./docker_before.sh ]; then
-	echo "Running before code..."
-	chmod +x ./docker_before.sh
-	./docker_before.sh
-	
+# Variable that will finally say if all was good
+ALL_WAS_GOOD="yes"
+
+# Run deployement script
+if [ -f ./Deployscript.sh ]; then
+	echo "Running deployement script..."
+	chmod +x ./Deployscript.sh
+
+	./Deployscript.sh
+
 	if [ $? != 0 ]; then
-	    echo "... Before code failed to run! Return code is $?... Execution interrupted"
-	    exit 1
+	    echo "... Deployement script failed to run! Return code is $?, Docker deployement will not be performed"
+	    ALL_WAS_GOOD="no"
 	fi
 	
-	echo "... End code before"
+	echo "... End running deployement script (ALL_WAS_GOOD=$ALL_WAS_GOOD)"
 fi
 
-# Build Docker picture
-echo "  > Creating Docker picture"
-sudo docker build -t $MICROSERVICE-service:latest .
+# If there is a Dockerfile, then run Docker
+# Only if precedent deployement process is a success
+if [ -f ./Dockerfile ] && [ "$ALL_WAS_GOOD" == "yes" ]; then
+    ## Build Docker picture
+    echo "Running Dockerfile..."
+    echo "  > Creating Docker picture"
+    docker build -t $MICROSERVICE-service:latest .
 
-DOCKER_OK="$?"
-if [ "$DOCKER_OK" != "0" ]; then
-    echo "  ... Docker build failed, no image produced (so docker run will not be executed but after code will)"
-    DOCKER_OK="nok"
-else
-    DOCKER_OK="ok"
-fi
+    if [ "$?" != "0" ]; then
+        echo "  ... Docker build failed, no image produced (so docker run will not be executed but after code will)"
+        ALL_WAS_GOOD="no"
+    fi
 
-# Run after code
-if [ -f ./docker_after.sh ]; then
-	echo "Running after code..."
-	chmod +x ./docker_after.sh
-	./docker_after.sh
-	
-	if [ $? != 0 ]; then
-	    echo "... After code failed to run! Return code is $?... Execution NOT interrupted"
-    else
-	    echo "... End code after"
-	fi
+    if [ "$ALL_WAS_GOOD" == "yes" ]; then
+        # Run service
+        ## Try to detect internal service port (to bind it to host computer 80)
+        PORT=$(cat "$MICROSERVICE/$MICROSERVICE.conf" 2> /dev/null | grep "port" | sed 's/port.*=[^0-9]*//')
 
+        echo "  > Service $MICROSERVICE port is $PORT"
+
+        if [ -z "$PORT" ]; then
+
+            echo "    ... Invalid port, don't start Docker instance"
+            ALL_WAS_GOOD="no"
+
+        else
+
+            ## Run Docker newly built image and bind it to port 80
+            ## (in order to make RP host compatible with it)
+            CONVENTIONNAL_PORT=80
+
+            sudo docker run -d \
+              -e OS_TENANT_NAME="$OS_TENANT_NAME" \
+              -e OS_USERNAME="$OS_USERNAME" \
+              -e OS_PASSWORD="$OS_PASSWORD" \
+              -e OS_AUTH_URL="$OS_AUTH_URL" \
+              -e OS_STACKNAME="$OS_STACKNAME" \
+              -e OS_RP_IP="$OS_RP_IP" \
+              -p $CONVENTIONNAL_PORT:$PORT "$MICROSERVICE-service"
+              
+            if [ $? != 0 ]; then
+                # Remain there had been an error !
+                echo "... Docker run failed"
+                ALL_WAS_GOOD="no"
+            fi
+        fi
+    fi
+
+    echo "... Dockerfile building terminated (ALL_WAS_GOOD=$ALL_WAS_GOOD)"
 fi
 
 # From now, use the parent folder
@@ -94,44 +123,10 @@ cd ..
 echo "  > Removing libs"
 rm -rf "$MICROSERVICE/lwswift"
 
-if [ "$DOCKER_OK" == "ok" ]; then
-    # Run service
-    ## Try to detect proper port
-    PORT=$(cat "$MICROSERVICE/$MICROSERVICE.conf" 2> /dev/null | grep "port" | sed 's/port.*=[^0-9]*//')
-    echo "Service $MICROSERVICE port is $PORT"
-    
-    if [ -z "$PORT" ]; then
-    
-        echo "... Invalid port, don't start Docker instance"
-        DOCKER_OK="nok"
-    
-    else
-
-        ## Run Docker newly built image and bind it to port 80 (in order to make RP host compatible with it)
-        CONVENTIONNAL_PORT=80
-        if [ "$MICROSERVICE" == "rp" ]; then
-            CONVENTIONNAL_PORT=8090 # Make RP NOT public
-        fi
-
-        sudo docker run -d \
-          -e OS_TENANT_NAME="$OS_TENANT_NAME" \
-          -e OS_USERNAME="$OS_USERNAME" \
-          -e OS_PASSWORD="$OS_PASSWORD" \
-          -e OS_AUTH_URL="$OS_AUTH_URL" \
-          -e OS_STACKNAME="$OS_STACKNAME" \
-          -e OS_RP_IP="$OS_RP_IP" \
-          -p $CONVENTIONNAL_PORT:$PORT "$MICROSERVICE-service"
-          
-        if [ $? != 0 ]; then
-            # Remain there had been an error !
-            DOCKER_OK="nok"
-        fi
-    fi
-fi
 
 echo "Process ended"
 
-if [ "$DOCKER_OK" != "ok" ]; then
+if [ "$ALL_WAS_GOOD" != "yes" ]; then
     exit 4
 else
     exit 0

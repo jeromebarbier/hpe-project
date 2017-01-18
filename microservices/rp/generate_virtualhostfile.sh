@@ -27,7 +27,7 @@ echo "# Configuration generated on $DATE using $HOST
 <VirtualHost *:*>
     ProxyPreserveHost On
     ProxyRequests Off
-" >> $OUT_FILE
+" > $OUT_FILE
 
 OUTPUT=$(heat stack-show $OS_STACKNAME 2> /dev/null)
 echo "$OUTPUT"
@@ -62,10 +62,8 @@ do
     fi
 done <<< "$OUTPUT"
 
-# Manage local website
-echo "    # Redirection for service homepage" >> $OUT_FILE
-echo "    ProxyPass / http://localhost:8090" >> $OUT_FILE
-echo "    ProxyPassReverse / http://localhost:8090" >> $OUT_FILE
+# NOTE: Main webpage is made available without proxy reversing (because directly
+#       hosted by RP's VM)
 
 echo "    <Proxy>
         Order Allow,Deny
