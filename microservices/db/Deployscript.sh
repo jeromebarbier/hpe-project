@@ -1,6 +1,6 @@
 #!/bin/bash
 
-apt-get install -y mysql
+apt-get install -y mysql-server
 
 service mysql restart
 mysql -uroot -e "CREATE USER 'admin'@'%' IDENTIFIED BY 'admin'"
