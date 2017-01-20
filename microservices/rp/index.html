@@ -1,7 +1,9 @@
 <html>
 <head>
 <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.1.1.min.js"></script>
-<title> WELCOME TO THE LOTTERY!!!!!!!!!</title>
+<title> Welcome to the lottery!</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="stylesheet.css">
 </head>
 <body>
 <script>
@@ -17,21 +19,29 @@ jQuery(function() {
 var service_b = $.ajax("/b/button/"+uid)
   .always(function(data) {
     console.log(data);
-    jQuery("body").append(data.html);
+    jQuery("#page").append(data.html);
     eval(data.js);
     jQuery("#elButton").disable();
+    jQuery("#elButton").addClass("btn btn-danger");
     jQuery("#elButton").playedTrigger(played);
   });
 
 var service_s = $.ajax("/s/checkPlayed/"+uid)
   .always(function(data) {
-	jQuery("body").append("<div id='status'>"+data.html+"</div>");
-	if (!(data.played)) jQuery("#elButton").enable();
+	jQuery("#page").append("<div id='status'>"+data.html+"</div>");
+	if (!(data.played)) {
+		jQuery("#elButton").enable();
+		jQuery("#elButton").removeClass("btn-danger");
+		jQuery("#elButton").addClass("btn-success");
+	}
 });
 
 var service_p = $.ajax("/p/"+uid)
   .always(function(data) {
-	if(data.img) $("body").append("<img src='data:image/png;base64,"+data.img+"'>");
+	if(data.img) {
+		jQuery("#page").append("<p>Vous avez deja gagne ce prix exceptionnel : ");
+		$("#page").append("<img src='data:image/png;base64,"+data.img+"'>");
+	}
 	else console.log("No img");
   });
 
@@ -43,14 +53,19 @@ function played() {
 	});
     var service_p = $.ajax("/p/"+uid)
     .always(function(data) {
-	if(data.img) $("body").append("<img src='data:image/png;base64,"+data.img+"'>");
-    });
+	if(data.img) {
+		$("#page").append("<p>Incroyable !! Vous avez gagne un "+data.name.split(".jpg")[0]+" !!!</p>");
+		$("#page").append("<img id='price' src='data:image/png;base64,"+data.img+"'>");
+	}   
+ });
 }
 });
 </script>
-<h1>LET'S GET READY TO RUMBLEEEEEEEEEEEEEEEEE</h1>
+<div id="page">
+<h1>Jouez pour gagner des prix exceptionnels !</h1>
 <div id="play"></div>
 <div id="picture"></div>
+</div>
 </body>
 </html>
 
