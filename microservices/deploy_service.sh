@@ -103,6 +103,7 @@ if [ -f ./Dockerfile ] && [ "$ALL_WAS_GOOD" == "yes" ]; then
               -e OS_AUTH_URL="$OS_AUTH_URL" \
               -e OS_STACKNAME="$OS_STACKNAME" \
               -e OS_RP_IP="$OS_RP_IP" \
+              -e OS_DB_IP="$OS_DB_IP" \
               -p $CONVENTIONNAL_PORT:$PORT "$MICROSERVICE-service"
               
             if [ $? != 0 ]; then
