@@ -165,16 +165,6 @@ function generate_subnet() {
 "
 }
 
-function inline_script() {
-    # This functions inlines its input and prints it
-    while [ -n "$1" ];
-    do
-        NO_N=$(echo "$1" | tr -d "\n" | tr -d "\r")
-        echo -n "$NO_N"
-        shift
-    done
-}
-
 # Check if user sourced its OpenRC
 if [ -z "$OS_TENANT_NAME" ]; then
     echo "Please source your openrc file before running this generator"
@@ -256,10 +246,6 @@ echo "  #Description of the security group
           remote_ip_prefix: 0.0.0.0/0
           port_range_min: 22
           port_range_max: 22
-        - protocol: tcp
-          remote_ip_prefix: 0.0.0.0/0
-          port_range_min: 8090
-          port_range_max: 8090
 "
 
 # Generates the network description
@@ -284,6 +270,7 @@ generate_subnet
 RP_WAIT_COUNT=0 # Safe mode
 RP_WAIT_CONDS="" # Non-safe mode
 BUILDING_WITH_RP="no"
+BUILDING_WITH_DB="no"
 for SERV in "$@"
 do
     if [ "$SERV" != "rp" ] && [ "$SERV" != "-npn" ]; then
@@ -299,6 +286,10 @@ do
     
     if [ "$SERV" == "rp" ]; then
         BUILDING_WITH_RP="yes"
+    fi
+    
+    if [ "$SERV" == "db" ]; then
+        BUILDING_WITH_DB="yes"
     fi
 done
 
@@ -380,6 +371,11 @@ do
         echo "            echo 'export OS_RP_IP=\"THE_RP_SERV_IP\"' >> $VMU_PROJECT_CONF_FILE"
     fi
 
+    if [ "$BUILDING_WITH_DB" == "yes" ] && [ "$1" != "db" ]; then
+        # If DB is buit, then other services MUST know its IP address
+        echo "            echo 'export OS_DB_IP=\"THE_DB_SERV_IP\"' >> $VMU_PROJECT_CONF_FILE"
+    fi
+
     echo "            echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
 
             echo '** Authorize user to log via its SSH Key **'
@@ -440,12 +436,17 @@ do
 
     fi
 
+    if [ "$BUILDING_WITH_DB" == "yes" ] && [ "$1" != "db" ]; then
+        echo "            # Give DB's address to other services
+            THE_DB_SERV_IP: { get_attr: [ db_instance_port, fixed_ips, 0, ip_address ] }"
+    fi
+
     echo "
   ## Its VM
   $1_instance:
     type: OS::Nova::Server
     properties:
-      image: ubuntu1404
+      image: ubuntu1604
       flavor: m1.small
       networks:
         - port: { get_resource: $1_instance_port }

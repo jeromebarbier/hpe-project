@@ -114,26 +114,37 @@ class lwswift:
     def get_service(self, name):
         """
         Try to retrieve a micro-service's contacting way:
-          - First, it checks if the service RP is available and if so, build the
-            path to use RP
-          - If RP is not available (for debugging for example), then it tries to
-            retrieve the URL from SWIFT
-        :param name: The microservice's name (in ["b", "i", "p", "w", "s"])
+          - First, it checks if the microservice exists
+          - Then, if the service is DB return it
+          - Then, if the service is a web service, use RP to relay the call
+          - Finally, if the service is RP, directly return its IP
+        :param name: The microservice's name (in ["b", "i", "p", "w", "s", "rp", "db"])
         :raise Exception: When the requested Microservice name is not valid
         :return: The requested IP address or None if there is no such service registered
         """
-        if name in ["b", "i", "p", "w", "s", "rp"]:
-            if os.getenv("OS_RP_IP") != None:
-                return os.getenv("OS_RP_IP") + "/" + name
-            
-            serv_ip = self.get_object(lwswift.container_services_directory, name)
-            if serv_ip == None:
-                return None
-            
-            return serv_ip + ":8090"
-        else:
+
+        # If service is unknown
+        if not (name in ["b", "i", "p", "w", "s", "rp", "db"]):
             raise Exception("lwsift.get_service: Micro-service " + name + " is not a valid service")
-    
+
+        # If we want to contact DB service
+        if name == "db":
+            return os.getenv("OS_DB_IP")
+
+        # And if RP is available... then it depends
+        RP_IP = os.getenv("OS_RP_IP")
+        if RP_IP == None:
+            return None
+
+        ## If we ask for a web service, then ask RP to relay the request
+        if name in ["b", "i", "p", "w", "s"]:
+                return RP_IP + "/" + name
+
+        ## If we want RP's IP, then just read and return it
+        elif name == "rp":
+            return RP_IP
+
+
     def register_service(self, name, ip):
         """
         Registers a new microservice's IP address into the directory
