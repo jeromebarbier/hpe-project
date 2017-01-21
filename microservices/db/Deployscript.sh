@@ -24,7 +24,7 @@ rm $CONFIG_FILE
 while read CONF_LINE;
 do
     echo "$CONF_LINE" | grep "bind-address " > /dev/null
-    if [  ]; then
+    if [ $? -q 0 ]; then
         echo "bind-address            = 0.0.0.0" >> $CONFIG_FILE
     else
         echo "$CONF_LINE" >> $CONFIG_FILE
