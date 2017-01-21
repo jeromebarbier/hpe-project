@@ -7,11 +7,15 @@ apt-get install -y mysql-server
 # Create a new user
 USERNAME="admin"
 PASSWORD="admin"
+DB_NAME="prestashop"
 service mysql restart
+
+echo "Creating user $USERNAME"
 mysql -uroot -e "CREATE USER '$USERNAME'@'%' IDENTIFIED BY '$PASSWORD'"
 mysql -uroot -e "GRANT ALL PRIVILEGES ON *.* TO '$USERNAME'@'%'"
 
 # Update configuration to allow external connections
+echo "Rewriting MySQL configuration"
 CONFIG_FILE="/etc/mysql/mysql.conf.d/mysqld.cnf"
 CONFIG_FILE_INITIAL_CONTENT=$(cat $CONFIG_FILE)
 
@@ -30,6 +34,8 @@ done <<< "$CONFIG_FILE_INITIAL_CONTENT"
 service mysql restart
 
 # Set-up the DB
-mysql -u$USERNAME -p$PASSWORD < prestashop_fullcustomer.dump.sql
+echo "Setting up the DB"
+mysql -u$USERNAME -p$PASSWORD -e "CREATE DATABASE $DB_NAME;"
+mysql -u$USERNAME -p$PASSWORD --database="$DB_NAME" < prestashop_fullcustomer.dump.sql
 
 exit $?
