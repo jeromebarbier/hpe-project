@@ -431,8 +431,11 @@ do
             echo '** Authorize user to log via its SSH Key **'
             echo '$SSH_KEY' >> $VMU_HOME.ssh/authorized_keys
 
-            echo '** Setting up Docker and Swiftclient lib **'
-            apt-get -y install docker.io git
+            echo '** Make sure that the system packet index is up to date **'
+            apt-get update
+
+            echo '** Make sure GIT is available **'
+            apt-get -y install git
 
             echo '** Get service code from GIT repository **'
             mkdir $VMU_HPE_PROJECT

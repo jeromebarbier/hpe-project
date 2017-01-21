@@ -36,10 +36,6 @@ fi
 
 echo "Building microservice $MICROSERVICE"
 
-# First, update packet repository
-echo "  > Updating packets repositories list"
-apt-get update
-
 # Copy libs
 echo "  > Copying libs..."
 cp -rp lwswift "$MICROSERVICE"
@@ -74,11 +70,14 @@ fi
 if [ -f ./Dockerfile ] && [ "$ALL_WAS_GOOD" == "yes" ]; then
     ## Build Docker picture
     echo "Running Dockerfile..."
+    echo "  > Explicitely ask to set-up Docker"
+    apt-get install -y docker.io
+    
     echo "  > Creating Docker picture"
     docker build -t $MICROSERVICE-service:latest .
 
     if [ "$?" != "0" ]; then
-        echo "  ... Docker build failed, no image produced (so docker run will not be executed but after code will)"
+        echo "  ... Docker build failed, no image produced (so docker run will not be executed)"
         ALL_WAS_GOOD="no"
     fi
 
