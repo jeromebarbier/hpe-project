@@ -30,7 +30,7 @@ config.logger = app.logger
 @app.route("/play/<id>")
 def api_play(id):
 	config.logger.info("*** Start processing id %s ***", id)
-	cnx = mysql.connector.connect(user=sys.argv[1], password=sys.argv[2], host=sys.argv[3], database=sys.argv[4])
+	cnx = mysql.connector.connect(user=os.getenv("DB_USERNAME"), password=os.getenv("DB_PASSWORD"), host=os.getenv("DB_SERVER"), database=os.getenv("DB_NAME"))
 	cursor = cnx.cursor()
 	query = ("SELECT id_customer FROM prestashop.ps_customer WHERE id_customer = '" + str(id) + "'")
 	cursor.execute(query)
