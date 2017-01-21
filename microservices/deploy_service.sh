@@ -99,7 +99,7 @@ if [ -f ./Dockerfile ] && [ "$ALL_WAS_GOOD" == "yes" ]; then
             ## (in order to make RP host compatible with it)
             CONVENTIONNAL_PORT=80
 
-            sudo docker run -d \
+            docker run -d \
               -e OS_TENANT_NAME="$OS_TENANT_NAME" \
               -e OS_USERNAME="$OS_USERNAME" \
               -e OS_PASSWORD="$OS_PASSWORD" \
