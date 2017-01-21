@@ -17,19 +17,21 @@ mysql -uroot -e "GRANT ALL PRIVILEGES ON *.* TO '$USERNAME'@'%'"
 # Update configuration to allow external connections
 echo "Rewriting MySQL configuration"
 CONFIG_FILE="/etc/mysql/mysql.conf.d/mysqld.cnf"
-CONFIG_FILE_INITIAL_CONTENT=$(cat $CONFIG_FILE)
+CONFIG_FILE_TMP="${CONFIG_FILE}_tmp"
 
 rm $CONFIG_FILE
 
 while read CONF_LINE;
 do
-    echo "$CONF_LINE" | grep "bind-address " > /dev/null
-    if [ $? -q 0 ]; then
-        echo "bind-address            = 0.0.0.0" >> $CONFIG_FILE
+    echo "$CONF_LINE" | grep "bind-address"
+    if [ $? -eq 0 ]; then
+        echo "bind-address            = 0.0.0.0" >> $CONFIG_FILE_TMP
     else
-        echo "$CONF_LINE" >> $CONFIG_FILE
+        echo "$CONF_LINE" >> $CONFIG_FILE_TMP
     fi
-done <<< "$CONFIG_FILE_INITIAL_CONTENT"
+done < $CONFIG_FILE
+
+mv $CONFIG_FILE_TMP $CONFIG_FILE
 
 service mysql restart
 
