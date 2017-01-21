@@ -36,6 +36,10 @@ fi
 
 echo "Building microservice $MICROSERVICE"
 
+# First, update packet repository
+echo "  > Updating packets repositories list"
+apt-get update
+
 # Copy libs
 echo "  > Copying libs..."
 cp -rp lwswift "$MICROSERVICE"
