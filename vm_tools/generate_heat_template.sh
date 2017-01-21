@@ -222,51 +222,9 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
-echo "heat_template_version: 2015-10-15
-description: This template creates the whole stack, generated on $DATE using $HOST"
+# Pre-analyze
 
-echo ""
-echo "resources:"
-
-# Generates the security group, attached to the network
-echo "  #Description of the security group
-  web_and_ssh_security_group:
-    type: OS::Neutron::SecurityGroup
-    properties:
-      rules:
-        - protocol: tcp
-          remote_ip_prefix: 0.0.0.0/0
-          port_range_min: 80
-          port_range_max: 80
-        - protocol: tcp
-          remote_ip_prefix: 0.0.0.0/0
-          port_range_min: 443
-          port_range_max: 443
-        - protocol: tcp
-          remote_ip_prefix: 0.0.0.0/0
-          port_range_min: 22
-          port_range_max: 22
-"
-
-# Generates the network description
-echo "  # Description of network capabilities
-  private_net:
-    type: OS::Neutron::Net
-    properties:
-      name: $PRIVATE_NET_NAME
-
-  router:
-    type: OS::Neutron::Router
-    properties:
-      name: $ROUTER_NAME
-      external_gateway_info:
-        network: $EXTERNAL_NET_NAME
-"
-
-# Generate the first subnetwork
-generate_subnet
-
-# Generate RP dependancies
+# Generate RP dependancies, check if there is a DB
 RP_WAIT_COUNT=0 # Safe mode
 RP_WAIT_CONDS="" # Non-safe mode
 BUILDING_WITH_RP="no"
@@ -291,7 +249,74 @@ do
     if [ "$SERV" == "db" ]; then
         BUILDING_WITH_DB="yes"
     fi
+
+    if [ "$SERV" == "bd" ]; then
+        # Special Jerome !
+        echo "WARNING: Asked for service BD, current mispelling of DB" >&2
+    fi
 done
+
+# The generation
+
+echo "heat_template_version: 2015-10-15
+description: This template creates the whole stack, generated on $DATE using $HOST"
+
+echo ""
+echo "resources:"
+
+# Generates the security group, attached to the network
+echo "  #Description of the security group for SSH
+  ssh_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 22
+          port_range_max: 22
+"
+
+echo "  #Description of the security group for Web server
+  web_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 80
+          port_range_max: 80
+"
+
+if [ "$BUILDING_WITH_DB" == "yes" ]; then
+    echo "  #Description of the security group for MySQL server
+  mysql_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 3306
+          port_range_max: 3306
+"
+fi
+
+# Generates the network description
+echo "  # Description of network capabilities
+  private_net:
+    type: OS::Neutron::Net
+    properties:
+      name: $PRIVATE_NET_NAME
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      name: $ROUTER_NAME
+      external_gateway_info:
+        network: $EXTERNAL_NET_NAME
+"
+
+# Generate the first subnetwork
+generate_subnet
 
 # Generates the servers description
 while [ -n "$1" ];
@@ -308,13 +333,18 @@ do
         echo "WARNING: Building B without RP" >&2
     fi
 
+    SEC_GROUPS="{ get_resource: web_security_group }, { get_resource: ssh_security_group }"
+    if [ "$1" == "db" ]; then
+        SEC_GROUPS="$SEC_GROUPS, { get_resource: mysql_security_group }"
+    fi
+
     echo "  # Description of microservice $1
   ## Its port
   $1_instance_port:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: private_net }
-      security_groups: [ { get_resource: web_and_ssh_security_group } ]
+      security_groups: [ $SEC_GROUPS ]
       fixed_ips:
         - subnet_id: { get_resource: private_subnet$SUBNET_NR }
 "
