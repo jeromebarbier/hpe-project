@@ -14,4 +14,4 @@ EXPOSE 8093
 USER i
 WORKDIR /home/i
 
-CMD ["bash", "-c", "/usr/bin/python3 i.py"]
+CMD ["/usr/bin/python3", "i.py"]
