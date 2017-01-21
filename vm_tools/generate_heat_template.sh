@@ -248,6 +248,7 @@ do
     
     if [ "$SERV" == "db" ]; then
         BUILDING_WITH_DB="yes"
+        ALEATORY_DB_PASSWORD=$(date +%s | sha256sum | base64 | head -c 32)
     fi
 
     if [ "$SERV" == "bd" ]; then
@@ -328,10 +329,24 @@ do
         continue
     fi
 
+    # Send some warning
     if [ "$1" == "b" ] && [ "$BUILDING_WITH_RP" == "no" ]; then
         # B uses RP to contact W so emits a warning if B is built without RP
         echo "WARNING: Building B without RP" >&2
     fi
+    if [ "$BUILDING_WITH_DB" == "no" ]; then
+        if [ "$1" == "b" ]; then
+            # B uses DB (according to specs) to find the admins that should get an email
+            echo "WARNING: Building B without DB" >&2
+        fi
+
+        if [ "$1" == "i" ]; then
+            # B uses DB to authenticate users
+            echo "WARNING: Building I without DB" >&2
+        fi
+    fi
+
+    # Generate code !
 
     SEC_GROUPS="{ get_resource: web_security_group }, { get_resource: ssh_security_group }"
     if [ "$1" == "db" ]; then
@@ -363,6 +378,8 @@ do
     description: The floating IP address of the deployed $1 instance
     value: { get_attr: [$1_floating_ip, floating_ip_address] }"
   fi
+
+    # First boot executed script
 
     VMU="ubuntu"
     VMU_HOME="/home/$VMU/"
@@ -404,6 +421,9 @@ do
     if [ "$BUILDING_WITH_DB" == "yes" ] && [ "$1" != "db" ]; then
         # If DB is buit, then other services MUST know its IP address
         echo "            echo 'export OS_DB_IP=\"THE_DB_SERV_IP\"' >> $VMU_PROJECT_CONF_FILE"
+        echo "            echo 'export OS_DB_USERNAME=\"prestashop\"' >> $VMU_PROJECT_CONF_FILE"
+        echo "            echo 'export OS_DB_PASSWORD=\"$ALEATORY_DB_PASSWORD\"' >> $VMU_PROJECT_CONF_FILE"
+        echo "            echo 'export OS_DB_DBNAME=\"prestashop\"' >> $VMU_PROJECT_CONF_FILE"
     fi
 
     echo "            echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
