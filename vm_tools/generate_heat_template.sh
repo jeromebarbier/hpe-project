@@ -222,51 +222,9 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
-echo "heat_template_version: 2015-10-15
-description: This template creates the whole stack, generated on $DATE using $HOST"
+# Pre-analyze
 
-echo ""
-echo "resources:"
-
-# Generates the security group, attached to the network
-echo "  #Description of the security group
-  web_and_ssh_security_group:
-    type: OS::Neutron::SecurityGroup
-    properties:
-      rules:
-        - protocol: tcp
-          remote_ip_prefix: 0.0.0.0/0
-          port_range_min: 80
-          port_range_max: 80
-        - protocol: tcp
-          remote_ip_prefix: 0.0.0.0/0
-          port_range_min: 443
-          port_range_max: 443
-        - protocol: tcp
-          remote_ip_prefix: 0.0.0.0/0
-          port_range_min: 22
-          port_range_max: 22
-"
-
-# Generates the network description
-echo "  # Description of network capabilities
-  private_net:
-    type: OS::Neutron::Net
-    properties:
-      name: $PRIVATE_NET_NAME
-
-  router:
-    type: OS::Neutron::Router
-    properties:
-      name: $ROUTER_NAME
-      external_gateway_info:
-        network: $EXTERNAL_NET_NAME
-"
-
-# Generate the first subnetwork
-generate_subnet
-
-# Generate RP dependancies
+# Generate RP dependancies, check if there is a DB
 RP_WAIT_COUNT=0 # Safe mode
 RP_WAIT_CONDS="" # Non-safe mode
 BUILDING_WITH_RP="no"
@@ -290,8 +248,76 @@ do
     
     if [ "$SERV" == "db" ]; then
         BUILDING_WITH_DB="yes"
+        ALEATORY_DB_PASSWORD=$(date +%s | sha256sum | base64 | head -c 32)
+    fi
+
+    if [ "$SERV" == "bd" ]; then
+        # Special Jerome !
+        echo "WARNING: Asked for service BD, current mispelling of DB" >&2
     fi
 done
+
+# The generation
+
+echo "heat_template_version: 2015-10-15
+description: This template creates the whole stack, generated on $DATE using $HOST"
+
+echo ""
+echo "resources:"
+
+# Generates the security group, attached to the network
+echo "  #Description of the security group for SSH
+  ssh_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 22
+          port_range_max: 22
+"
+
+echo "  #Description of the security group for Web server
+  web_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 80
+          port_range_max: 80
+"
+
+if [ "$BUILDING_WITH_DB" == "yes" ]; then
+    echo "  #Description of the security group for MySQL server
+  mysql_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 3306
+          port_range_max: 3306
+"
+fi
+
+# Generates the network description
+echo "  # Description of network capabilities
+  private_net:
+    type: OS::Neutron::Net
+    properties:
+      name: $PRIVATE_NET_NAME
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      name: $ROUTER_NAME
+      external_gateway_info:
+        network: $EXTERNAL_NET_NAME
+"
+
+# Generate the first subnetwork
+generate_subnet
 
 # Generates the servers description
 while [ -n "$1" ];
@@ -303,9 +329,28 @@ do
         continue
     fi
 
+    # Send some warning
     if [ "$1" == "b" ] && [ "$BUILDING_WITH_RP" == "no" ]; then
         # B uses RP to contact W so emits a warning if B is built without RP
         echo "WARNING: Building B without RP" >&2
+    fi
+    if [ "$BUILDING_WITH_DB" == "no" ]; then
+        if [ "$1" == "b" ]; then
+            # B uses DB (according to specs) to find the admins that should get an email
+            echo "WARNING: Building B without DB" >&2
+        fi
+
+        if [ "$1" == "i" ]; then
+            # B uses DB to authenticate users
+            echo "WARNING: Building I without DB" >&2
+        fi
+    fi
+
+    # Generate code !
+
+    SEC_GROUPS="{ get_resource: web_security_group }, { get_resource: ssh_security_group }"
+    if [ "$1" == "db" ]; then
+        SEC_GROUPS="$SEC_GROUPS, { get_resource: mysql_security_group }"
     fi
 
     echo "  # Description of microservice $1
@@ -314,7 +359,7 @@ do
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: private_net }
-      security_groups: [ { get_resource: web_and_ssh_security_group } ]
+      security_groups: [ $SEC_GROUPS ]
       fixed_ips:
         - subnet_id: { get_resource: private_subnet$SUBNET_NR }
 "
@@ -333,6 +378,8 @@ do
     description: The floating IP address of the deployed $1 instance
     value: { get_attr: [$1_floating_ip, floating_ip_address] }"
   fi
+
+    # First boot executed script
 
     VMU="ubuntu"
     VMU_HOME="/home/$VMU/"
@@ -374,6 +421,9 @@ do
     if [ "$BUILDING_WITH_DB" == "yes" ] && [ "$1" != "db" ]; then
         # If DB is buit, then other services MUST know its IP address
         echo "            echo 'export OS_DB_IP=\"THE_DB_SERV_IP\"' >> $VMU_PROJECT_CONF_FILE"
+        echo "            echo 'export OS_DB_USERNAME=\"prestashop\"' >> $VMU_PROJECT_CONF_FILE"
+        echo "            echo 'export OS_DB_PASSWORD=\"$ALEATORY_DB_PASSWORD\"' >> $VMU_PROJECT_CONF_FILE"
+        echo "            echo 'export OS_DB_DBNAME=\"prestashop\"' >> $VMU_PROJECT_CONF_FILE"
     fi
 
     echo "            echo 'source $VMU_PROJECT_CONF_FILE' >> $VMU_HOME.bashrc
@@ -381,8 +431,11 @@ do
             echo '** Authorize user to log via its SSH Key **'
             echo '$SSH_KEY' >> $VMU_HOME.ssh/authorized_keys
 
-            echo '** Setting up Docker and Swiftclient lib **'
-            apt-get -y install docker.io git
+            echo '** Make sure that the system packet index is up to date **'
+            apt-get update
+
+            echo '** Make sure GIT is available **'
+            apt-get -y install git
 
             echo '** Get service code from GIT repository **'
             mkdir $VMU_HPE_PROJECT
