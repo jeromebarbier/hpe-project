@@ -14,7 +14,8 @@ chmod +x generate_virtualhostfile.sh
 a2ensite reverse-list
 
 # TODO: Maxime
-# mv website_page.html /var/www/html/index.html
+mv index.html /var/www/html/index.html
+mv stylesheet.css /var/www/html/stylesheet.css
 
 # And finally, take all of that in consideration
 service apache2 restart
