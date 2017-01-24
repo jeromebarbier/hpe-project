@@ -10,10 +10,10 @@
 var uid = window.location.hash.substr(1);
 jQuery(function() {
 
-/*var service_i = $.ajax("i/play/"+uid)
+var service_i = $.ajax("i/play/"+uid)
   .always(function(data) {
     console.log(data)
-  });*/
+  });
 
 
 var service_b = $.ajax("/b/button/"+uid)
@@ -56,7 +56,9 @@ function played() {
 	if(data.img) {
 		$("#page").append("<p>Incroyable !! Vous avez gagne un "+data.name.split(".jpg")[0]+" !!!</p>");
 		$("#page").append("<img id='price' src='data:image/png;base64,"+data.img+"'>");
-	}   
+	}  
+    jQuery("#elButton").removeClass("btn-success");
+    jQuery("#elButton").addClass("btn-danger"); 
  });
 }
 });
