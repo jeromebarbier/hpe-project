@@ -2,6 +2,10 @@ body {
 
 }
 
+img {
+    width:50%;
+}
+
 #page {
     text-align:center;
     width: 80%;
