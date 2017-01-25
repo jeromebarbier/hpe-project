@@ -47,6 +47,8 @@ def button(uid):
         "js": """
         function play() {
             jQuery("#elButton").disable();
+	    jQuery("#elButton").addClass("btn-danger");
+	    jQuery("#elButton").removeClass("btn-success");
             jQuery.getJSON("/b/click/""" + uid + """", {}, function(r) {
                 if(r.ok != undefined) {
                     if(r.ok) {
@@ -59,6 +61,8 @@ def button(uid):
                 }
             }).fail(function() {
                 jQuery("#elButton").enable();
+	    	jQuery("#elButton").addClass("btn-success");
+	    	jQuery("#elButton").removeClass("btn-danger");
                 jQuery("#elButton").replaceWith(jQuery("<p>Failed to get an answer from the microservice</p>"));
             });
         }
