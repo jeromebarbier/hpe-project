@@ -46,8 +46,8 @@ def button(uid):
         # The associated JS API
         "js": """
         function play() {
+            jQuery("#elButton").disable();
             jQuery.getJSON("/b/click/""" + uid + """", {}, function(r) {
-                jQuery("#elButton").disable();
                 if(r.ok != undefined) {
                     if(r.ok) {
                         if(jQuery("#elButton").played != undefined) {
@@ -58,6 +58,7 @@ def button(uid):
                     }
                 }
             }).fail(function() {
+                jQuery("#elButton").enable();
                 jQuery("#elButton").replaceWith(jQuery("<p>Failed to get an answer from the microservice</p>"));
             });
         }
