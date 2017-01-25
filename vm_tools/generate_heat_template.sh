@@ -418,9 +418,11 @@ do
         echo "            echo 'export OS_RP_IP=\"THE_RP_SERV_IP\"' >> $VMU_PROJECT_CONF_FILE"
     fi
 
-    if [ "$BUILDING_WITH_DB" == "yes" ] && [ "$1" != "db" ]; then
+    if [ "$BUILDING_WITH_DB" == "yes" ]; then
         # If DB is buit, then other services MUST know its IP address
-        echo "            echo 'export OS_DB_IP=\"THE_DB_SERV_IP\"' >> $VMU_PROJECT_CONF_FILE"
+        if [ "$1" != "db" ]; then
+            echo "            echo 'export OS_DB_IP=\"THE_DB_SERV_IP\"' >> $VMU_PROJECT_CONF_FILE"
+        fi
         echo "            echo 'export OS_DB_USERNAME=\"prestashop\"' >> $VMU_PROJECT_CONF_FILE"
         echo "            echo 'export OS_DB_PASSWORD=\"$ALEATORY_DB_PASSWORD\"' >> $VMU_PROJECT_CONF_FILE"
         echo "            echo 'export OS_DB_DBNAME=\"prestashop\"' >> $VMU_PROJECT_CONF_FILE"
