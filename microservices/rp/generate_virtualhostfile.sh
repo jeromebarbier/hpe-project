@@ -51,7 +51,7 @@ do
         IP=""
     fi
     
-    if [ -n "$IP" ] && [ -n "$SERVICE" ] && [ "$SERVICE" != "rp" ]; then
+    if [ -n "$IP" ] && [ -n "$SERVICE" ] && [ "$SERVICE" != "rp" ] && [ "$SERVICE" != "db" ]; then
         echo "    # Redirection for service $SERVICE" >> $OUT_FILE
         echo "    ProxyPass /$SERVICE http://$IP:80" >> $OUT_FILE
         echo "    ProxyPassReverse /$SERVICE http://$IP:80" >> $OUT_FILE
