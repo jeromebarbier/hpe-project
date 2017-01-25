@@ -16,6 +16,7 @@ if [ "$1" == "help" ]; then
     echo "          services to have succeeded to deploy before being deployed"
     echo "   - -gb <NAME>: Force the deployed servers to focus on one single GIT"
     echo "                 branch (master by default)"
+    echo "   - -nsw      : Tells to NOT generate code for SWIFT containers"
     echo ""
     echo "Services:"
     echo "   - Enumerate the services you want to include in the template"
@@ -178,6 +179,7 @@ FLOATING_IP="yes"
 PUBLIC_SERVER=""
 RP_SAFE="no"
 GIT_BRANCH="master"
+GEN_SWIFT_CONTAINERS="yes"
 while true ;
 do
     if [ "$1" == "-y" ]; then
@@ -194,6 +196,8 @@ do
         shift
     elif [ "$1" == "-sf" ]; then
         RP_SAFE="yes"
+    elif [ "$1" == "-nsw" ]; then
+        GEN_SWIFT_CONTAINERS="no"
     else
         break
     fi
@@ -298,6 +302,21 @@ if [ "$BUILDING_WITH_DB" == "yes" ]; then
           remote_ip_prefix: 0.0.0.0/0
           port_range_min: 3306
           port_range_max: 3306
+"
+fi
+
+# Generates SWIFT containers
+if [ "$GEN_SWIFT_CONTAINERS" == "yes" ]; then
+    echo "  # Description of SWIFT containers
+  gifts:
+    type: OS::Swift::Container
+    properties:
+      name: gifts
+
+  gifts_names:
+    type: OS::Swift::Container
+    properties:
+      name: gifts-names
 "
 fi
 
