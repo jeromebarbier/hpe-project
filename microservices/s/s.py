@@ -41,11 +41,13 @@ def click(uid):
     price = lwsc.get_object(lwswift.container_pictures_name, uid)
     if price is None:
         data = {
-        "html": "<p>User " + uid + " has not played yet.</p>"
+        "html": "<p>User " + uid + " has not played yet.</p>",
+	"played": False
     }
     else:
         data = {
-        "html": "<p>User " + uid + " has already played.</p>"
+        "html": "<p>User " + uid + " has already played.</p>",
+	"played": True
     }
 
     resp = jsonify(data);

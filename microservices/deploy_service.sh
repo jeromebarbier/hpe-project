@@ -69,6 +69,9 @@ fi
 # Only if precedent deployement process is a success
 if [ -f ./Dockerfile ] && [ "$ALL_WAS_GOOD" == "yes" ]; then
     ## Build Docker picture
+    echo "Installing Docker...."
+    apt-get install -y docker.io
+
     echo "Running Dockerfile..."
     echo "  > Explicitely ask to set-up Docker"
     apt-get install -y docker.io

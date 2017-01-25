@@ -10,12 +10,12 @@ if [ "$1" == "help" ]; then
     echo "Options:"
     echo "   - -s: Don't generate other outputs than the HEAT template"
     echo "   - -y: Don't ask for input (use default values for the template)"
-    echo "   - -nfip: Generate the script without the floating IP allocation"
     echo "   - -ps <name>: Name of the public server (which will get a floatting IP)"
     echo "   - -sf: Safe mode, only if RP is included, force it to wait for all "
     echo "          services to have succeeded to deploy before being deployed"
     echo "   - -gb <NAME>: Force the deployed servers to focus on one single GIT"
     echo "                 branch (master by default)"
+    echo "   - -nsw      : Tells to NOT generate code for SWIFT containers"
     echo ""
     echo "Services:"
     echo "   - Enumerate the services you want to include in the template"
@@ -108,7 +108,7 @@ function ask_user() {
     VAL=""
     
     if [ "yes" != "$4" ]; then
-        printf "$1 [$2]: "
+        printf "$1 [$2]: " >&2
     fi
     
     if [ "yes" != "$3" ]; then
@@ -116,7 +116,7 @@ function ask_user() {
     else
         if [ "yes" != "$4" ]; then
             # Don't simulate user input if we're not supposed to output stuff!
-            echo "$2"
+            echo "$2" >&2
         fi
     fi
     
@@ -167,25 +167,23 @@ function generate_subnet() {
 
 # Check if user sourced its OpenRC
 if [ -z "$OS_TENANT_NAME" ]; then
-    echo "Please source your openrc file before running this generator"
+    echo "Please source your openrc file before running this generator" >&2
     exit 1
 fi
 
 # A bit of configuration
 ASSUME_YES="no"
 SILENT="no"
-FLOATING_IP="yes"
 PUBLIC_SERVER=""
 RP_SAFE="no"
 GIT_BRANCH="master"
+GEN_SWIFT_CONTAINERS="yes"
 while true ;
 do
     if [ "$1" == "-y" ]; then
         ASSUME_YES="yes"
     elif [ "$1" == "-s" ]; then
         SILENT="yes"
-    elif [ "$1" == "-nfip" ]; then
-        FLOATING_IP="no"
     elif [ "$1" == "-ps" ]; then
         PUBLIC_SERVER="$2"
         shift
@@ -194,6 +192,8 @@ do
         shift
     elif [ "$1" == "-sf" ]; then
         RP_SAFE="yes"
+    elif [ "$1" == "-nsw" ]; then
+        GEN_SWIFT_CONTAINERS="no"
     else
         break
     fi
@@ -301,6 +301,21 @@ if [ "$BUILDING_WITH_DB" == "yes" ]; then
 "
 fi
 
+# Generates SWIFT containers
+if [ "$GEN_SWIFT_CONTAINERS" == "yes" ]; then
+    echo "  # Description of SWIFT containers
+  gifts:
+    type: OS::Swift::Container
+    properties:
+      name: gifts
+
+  gifts_names:
+    type: OS::Swift::Container
+    properties:
+      name: gifts-names
+"
+fi
+
 # Generates the network description
 echo "  # Description of network capabilities
   private_net:
@@ -364,7 +379,7 @@ do
         - subnet_id: { get_resource: private_subnet$SUBNET_NR }
 "
 
-    if [ -n "$EXTERNAL_NET_NAME" ] && [ "yes" == "$FLOATING_IP" ] && [ "$PUBLIC_SERVER" == "$1" ]; then
+    if [ -n "$EXTERNAL_NET_NAME" ] && [ "$PUBLIC_SERVER" == "$1" ]; then
         echo "  # Its floatting IP
   $1_floating_ip:
     type: OS::Neutron::FloatingIP

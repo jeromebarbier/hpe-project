@@ -1,0 +1,73 @@
+<html>
+<head>
+<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.1.1.min.js"></script>
+<title> Welcome to the lottery!</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="stylesheet.css">
+</head>
+<body>
+<script>
+var uid = window.location.hash.substr(1);
+jQuery(function() {
+
+var service_i = $.ajax("i/play/"+uid)
+  .always(function(data) {
+    console.log(data)
+  });
+
+
+var service_b = $.ajax("/b/button/"+uid)
+  .always(function(data) {
+    console.log(data);
+    jQuery("#page").append(data.html);
+    eval(data.js);
+    jQuery("#elButton").disable();
+    jQuery("#elButton").addClass("btn btn-danger");
+    jQuery("#elButton").playedTrigger(played);
+  });
+
+var service_s = $.ajax("/s/checkPlayed/"+uid)
+  .always(function(data) {
+	jQuery("#page").append("<div id='status'>"+data.html+"</div>");
+	if (!(data.played)) {
+		jQuery("#elButton").enable();
+		jQuery("#elButton").removeClass("btn-danger");
+		jQuery("#elButton").addClass("btn-success");
+	}
+});
+
+var service_p = $.ajax("/p/"+uid)
+  .always(function(data) {
+	if(data.img) {
+		jQuery("#page").append("<p>Vous avez deja gagne ce prix exceptionnel : ");
+		$("#page").append("<img src='data:image/png;base64,"+data.img+"'>");
+	}
+	else console.log("No img");
+  });
+
+
+function played() {
+    var service_s = $.ajax("/s/checkPlayed/"+uid)
+         .always(function(data) {
+	    jQuery("#status").html(data.html);
+	});
+    var service_p = $.ajax("/p/"+uid)
+    .always(function(data) {
+	if(data.img) {
+		$("#page").append("<p>Incroyable !! Vous avez gagne un "+data.name.split(".jpg")[0]+" !!!</p>");
+		$("#page").append("<img id='price' src='data:image/png;base64,"+data.img+"'>");
+	}  
+    jQuery("#elButton").removeClass("btn-success");
+    jQuery("#elButton").addClass("btn-danger"); 
+ });
+}
+});
+</script>
+<div id="page">
+<h1>Jouez pour gagner des prix exceptionnels !</h1>
+<div id="play"></div>
+<div id="picture"></div>
+</div>
+</body>
+</html>
+
