@@ -1,6 +1,6 @@
 #!/bin/bash
 source /home/ubuntu/.dynamite
-echo "Database Authentication: $OS_DB_USERNAME, $OS_DB_PASSWORD, $OS_DB_NAME"
+echo "Database Authentication: $OS_DB_USERNAME, $OS_DB_PASSWORD, $OS_DB_DBNAME"
 CONFIGURATION="/etc/mysql/mysql.conf.d/mysqld.cnf"
 
 export DEBIAN_FRONTEND=noninteractive
@@ -9,11 +9,11 @@ debconf-set-selections <<< "mysql-server mysql-server/root_password_again passwo
 apt-get update
 apt-get install -y mysql-server mysql-client
 
-mysql -u root --password=$OS_DB_PASSWORD -e "CREATE DATABASE $OS_DB_NAME"
+mysql -u root --password=$OS_DB_PASSWORD -e "CREATE DATABASE $OS_DB_DBNAME"
 mysql -u root --password=$OS_DB_PASSWORD -e "CREATE USER '$OS_DB_USERNAME'@'%' IDENTIFIED BY '$OS_DB_PASSWORD'"
 mysql -u root --password=$OS_DB_PASSWORD -e "GRANT ALL PRIVILEGES ON *.* TO '$OS_DB_USERNAME'@'%'"
 mysql -u root --password=$OS_DB_PASSWORD -e "FLUSH PRIVILEGES"
-mysql -u $OS_DB_USERNAME --password=$OS_DB_PASSWORD $OS_DB_NAME -e 'source prestashop_fullcustomer.dump.sql'
+mysql -u $OS_DB_USERNAME --password=$OS_DB_PASSWORD $OS_DB_DBNAME -e 'source prestashop_fullcustomer.dump.sql'
 
 # Update configuration to allow external connections
 echo "Rewriting MySQL configuration"
