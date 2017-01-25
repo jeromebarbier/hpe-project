@@ -8,11 +8,18 @@
 <body>
 <script>
 var uid = window.location.hash.substr(1);
+if(!uid) uid = 0;
 jQuery(function() {
+
+var can_play=false;
 
 var service_i = $.ajax("i/play/"+uid)
   .always(function(data) {
-    console.log(data)
+    if(data.auth == uid) {
+	jQuery("#page").append("<p>User "+uid+" is authentified.</p>");
+    	can_play=true;
+    }
+	else jQuery("#page").append("<p>User not authentified. Please authentify yourself.</p>");
   });
 
 
@@ -28,8 +35,8 @@ var service_b = $.ajax("/b/button/"+uid)
 
 var service_s = $.ajax("/s/checkPlayed/"+uid)
   .always(function(data) {
-	jQuery("#page").append("<div id='status'>"+data.html+"</div>");
-	if (!(data.played)) {
+	jQuery("#page").append("<p></p><div id='status'>"+data.html+"</div>");
+	if (!(data.played) && can_play) {
 		jQuery("#elButton").enable();
 		jQuery("#elButton").removeClass("btn-danger");
 		jQuery("#elButton").addClass("btn-success");
@@ -39,7 +46,7 @@ var service_s = $.ajax("/s/checkPlayed/"+uid)
 var service_p = $.ajax("/p/"+uid)
   .always(function(data) {
 	if(data.img) {
-		jQuery("#page").append("<p>Vous avez deja gagne ce prix exceptionnel : ");
+		jQuery("#page").append("<p>You've already won this crazy price!</p>");
 		$("#page").append("<img src='data:image/png;base64,"+data.img+"'>");
 	}
 	else console.log("No img");
@@ -50,17 +57,21 @@ function played() {
     var service_s = $.ajax("/s/checkPlayed/"+uid)
          .always(function(data) {
 	    jQuery("#status").html(data.html);
+	    if (data.played) {
+		jQuery("#elButton").removeClass("btn-success");
+		jQuery("#elButton").disable();
+		jQuery("#elButton").addClass("btn-danger");
+	    }
 	});
     var service_p = $.ajax("/p/"+uid)
     .always(function(data) {
 	if(data.img) {
-		$("#page").append("<p>Incroyable !! Vous avez gagne un "+data.name.split(".jpg")[0]+" !!!</p>");
+		$("#page").append("<h1>AMAZING, YOU WON!! Here's your price: </h1>");
 		$("#page").append("<img id='price' src='data:image/png;base64,"+data.img+"'>");
 	}  
-    jQuery("#elButton").removeClass("btn-success");
-    jQuery("#elButton").addClass("btn-danger"); 
  });
 }
+jQuery("#elButton").on('click', function(){jQuery("#elButton").disable();});
 });
 </script>
 <div id="page">
