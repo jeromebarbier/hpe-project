@@ -167,7 +167,7 @@ function generate_subnet() {
 
 # Check if user sourced its OpenRC
 if [ -z "$OS_TENANT_NAME" ]; then
-    echo "Please source your openrc file before running this generator"
+    echo "Please source your openrc file before running this generator" >&2
     exit 1
 fi
 
