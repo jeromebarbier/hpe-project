@@ -1,44 +1,24 @@
 #!/bin/bash
-
-export DEBIAN_FRONTEND=noninteractive
-
-apt-get install -y mysql-server
-
-# Create a new user
 USERNAME="admin"
 PASSWORD="admin"
-DB_NAME="prestashop"
-service mysql restart
+DATABASE="prestashop"
+CONFIGURATION="/etc/mysql/mysql.conf.d/mysqld.cnf"
 
-echo "Creating user $USERNAME"
-mysql -uroot -e "CREATE USER '$USERNAME'@'%' IDENTIFIED BY '$PASSWORD'"
-mysql -uroot -e "GRANT ALL PRIVILEGES ON *.* TO '$USERNAME'@'%'"
+export DEBIAN_FRONTEND=noninteractive
+debconf-set-selections <<< "mysql-server mysql-server/root_password password $PASSWORD"
+debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $PASSWORD"
+apt-get update
+apt-get install -y mysql-server
+
+mysql -u root --password=$PASSWORD -e "CREATE DATABASE $DATABASE"
+mysql -u root --password=$PASSWORD -e "CREATE USER '$USERNAME'@'%' IDENTIFIED BY '$PASSWORD'"
+mysql -u root --password=$PASSWORD -e "GRANT ALL PRIVILEGES ON *.* TO '$USERNAME'@'%'"
+mysql -u root --password=$PASSWORD -e "FLUSH PRIVILEGES"
+mysql -u $USERNAME --password=$PASSWORD $DATABASE -e 'source prestashop_fullcustomer.dump.sql'
 
 # Update configuration to allow external connections
 echo "Rewriting MySQL configuration"
-CONFIG_FILE="/etc/mysql/mysql.conf.d/mysqld.cnf"
-CONFIG_FILE_TMP="${CONFIG_FILE}_tmp"
-
-rm $CONFIG_FILE
-
-while read CONF_LINE;
-do
-    grep 'bind-address' "$CONF_LINE"
-    retval=$?
-    if [ $? = 0 ]; then
-        echo "bind-address            = 0.0.0.0" >> $CONFIG_FILE_TMP
-    else
-        echo "$CONF_LINE" >> $CONFIG_FILE_TMP
-    fi
-done < $CONFIG_FILE
-
-mv $CONFIG_FILE_TMP $CONFIG_FILE
-
+echo "[mysqld]\nbind-address = 0.0.0.0" > $CONFIGURATION
 service mysql restart
-
-# Set-up the DB
-echo "Setting up the DB"
-mysql -u$USERNAME -p$PASSWORD -e "CREATE DATABASE $DB_NAME;"
-mysql -u$USERNAME -p$PASSWORD --database="$DB_NAME" < prestashop_fullcustomer.dump.sql
 
 exit $?
